@@ -1,0 +1,13 @@
+{
+  "name": "air-canvas",
+  "version": "1.0.0",
+  "description": "Real-time hand motion tracking canvas app",
+  "main": "index.html",
+  "scripts": {
+    "dev": "python3 -m http.server 3000 --directory .",
+    "start": "python3 -m http.server 3000 --directory ."
+  },
+  "keywords": ["canvas", "drawing", "hand-tracking", "mediapipe"],
+  "author": "",
+  "license": "MIT"
+}
