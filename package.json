@@ -4,8 +4,11 @@
   "description": "Real-time hand motion tracking canvas app",
   "main": "index.html",
   "scripts": {
-    "dev": "python3 -m http.server 3000 --directory .",
-    "start": "python3 -m http.server 3000 --directory ."
+    "dev": "npx http-server . -p 3000",
+    "start": "npx http-server . -p 3000"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
   },
   "keywords": ["canvas", "drawing", "hand-tracking", "mediapipe"],
   "author": "",
