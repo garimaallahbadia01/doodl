@@ -6,92 +6,81 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Air Canvas — Draw with your hands</title>
     <meta name="description"
-        content="Draw on screen using only your index finger in the air, tracked via webcam. No mouse or stylus needed — your hand is the input device." />
-    <meta name="theme-color" content="#0f0f14" />
+        content="Draw on screen using only your index finger in the air, tracked via webcam. No mouse or stylus needed." />
+    <meta name="theme-color" content="#0a0a0f" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
-    <!-- Hidden video for MediaPipe (not displayed full-screen) -->
-    <video id="webcam" autoplay playsinline muted></video>
 
-    <!-- App layout -->
-    <div class="app-layout">
-        <!-- Header with logo and toolbar -->
-        <header class="app-header">
-            <div class="app-logo">
-                <span class="logo-icon">✋</span>
-                <h1>Air Canvas</h1>
-            </div>
-            <div id="toolbar" class="toolbar">
-                <div class="toolbar-colors">
-                    <button class="color-swatch active" data-color="#111111" style="background:#111111;" title="Black"
-                        id="swatch-black"></button>
-                    <button class="color-swatch" data-color="#ef4444" style="background:#ef4444;" title="Red"
-                        id="swatch-red"></button>
-                    <button class="color-swatch" data-color="#3b82f6" style="background:#3b82f6;" title="Blue"
-                        id="swatch-blue"></button>
-                    <button class="color-swatch" data-color="#22c55e" style="background:#22c55e;" title="Green"
-                        id="swatch-green"></button>
-                    <button class="color-swatch" data-color="#eab308" style="background:#eab308;" title="Yellow"
-                        id="swatch-yellow"></button>
-                    <button class="color-swatch" data-color="#a855f7" style="background:#a855f7;" title="Purple"
-                        id="swatch-purple"></button>
-                </div>
-                <div class="toolbar-divider"></div>
-                <button id="eraserTool" class="toolbar-btn" title="Eraser">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 20H7L3 16c-.8-.8-.8-2 0-2.8L14.6 1.6c.8-.8 2-.8 2.8 0l5 5c.8.8.8 2 0 2.8L11 20">
-                        </path>
-                    </svg>
-                    <span>Eraser</span>
-                </button>
-                <button id="clearCanvas" class="toolbar-btn" title="Clear Canvas">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
-                        </path>
-                    </svg>
-                    <span>Clear</span>
-                </button>
-                <div class="toolbar-divider"></div>
-                <button id="cameraToggle" class="toolbar-btn" title="Toggle Camera">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M23 7l-7 5 7 5V7z"></path>
-                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
-                    </svg>
-                    <span>Cam</span>
-                </button>
-            </div>
-        </header>
-
-        <!-- Main canvas area -->
-        <main class="canvas-area">
-            <canvas id="drawingCanvas"></canvas>
-            <!-- Fingertip tracker dot (positioned within canvas area) -->
-            <div id="trackerDot" class="tracker-dot"></div>
-
-            <!-- Onboarding hint -->
-            <div id="onboardingHint" class="onboarding-hint">
-                <span class="hint-icon">✌️</span>
-                <span>Pinch to draw</span>
-            </div>
-        </main>
+    <!-- Camera PIP panel -->
+    <div class="pip-panel" id="pipPanel">
+        <video id="webcam" autoplay playsinline muted></video>
+        <canvas id="skeletonCanvas"></canvas>
     </div>
 
-    <!-- Camera PIP window -->
-    <div id="cameraPip" class="camera-pip">
-        <div class="pip-label">
-            <div class="pip-dot"></div>
-            <span>LIVE</span>
+    <!-- Center stage: canvas panel + toolbar -->
+    <div class="center-stage">
+        <div class="canvas-panel" id="canvasPanel">
+            <canvas id="drawingCanvas"></canvas>
         </div>
+        <div id="toolbar" class="toolbar">
+            <div class="toolbar-colors">
+                <button class="color-swatch active" data-color="#111111" style="--swatch-color:#111111" title="Black"
+                    id="swatch-black"></button>
+                <button class="color-swatch" data-color="#ffffff" style="--swatch-color:#ffffff" title="White"
+                    id="swatch-white"></button>
+                <button class="color-swatch" data-color="#ef4444" style="--swatch-color:#ef4444" title="Red"
+                    id="swatch-red"></button>
+                <button class="color-swatch" data-color="#3b82f6" style="--swatch-color:#3b82f6" title="Blue"
+                    id="swatch-blue"></button>
+                <button class="color-swatch" data-color="#22c55e" style="--swatch-color:#22c55e" title="Green"
+                    id="swatch-green"></button>
+                <button class="color-swatch" data-color="#eab308" style="--swatch-color:#eab308" title="Yellow"
+                    id="swatch-yellow"></button>
+            </div>
+            <div class="toolbar-divider"></div>
+            <button id="eraserTool" class="toolbar-btn" title="Eraser">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 20H7L3 16c-.8-.8-.8-2 0-2.8L14.6 1.6c.8-.8 2-.8 2.8 0l5 5c.8.8.8 2 0 2.8L11 20">
+                    </path>
+                </svg>
+                <span>Eraser</span>
+            </button>
+            <div class="toolbar-divider"></div>
+            <button id="clearCanvas" class="toolbar-btn" title="Clear">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                    </path>
+                </svg>
+                <span>Clear</span>
+            </button>
+            <div class="toolbar-divider"></div>
+            <button id="cameraToggle" class="toolbar-btn" title="Toggle Camera">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 7l-7 5 7 5V7z"></path>
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                </svg>
+                <span>Cam</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Tracker dot -->
+    <div id="trackerDot" class="tracker-dot"></div>
+
+    <!-- Onboarding hint -->
+    <div id="onboardingHint" class="onboarding-hint">
+        <span class="hint-icon">✌️</span>
+        <span>Pinch to draw</span>
     </div>
 
     <!-- Loading overlay -->
@@ -116,18 +105,18 @@
 
     <!-- Privacy note -->
     <div class="privacy-note">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
         </svg>
-        <span>100% private — camera processed locally, nothing recorded or sent</span>
+        <span>100% private — processed locally</span>
     </div>
 
-    <!-- MediaPipe Tasks Vision from CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs" crossorigin="anonymous"
-        type="module"></script>
-    <script src="app.js" type="module"></script>
+    <!-- MediaPipe Tasks Vision (non-module CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js"
+        crossorigin="anonymous"></script>
+    <script src="app.js"></script>
 </body>
 
 </html>

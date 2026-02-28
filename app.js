@@ -1,94 +1,82 @@
 /* ============================================
    AIR CANVAS — Application Logic
+   Modern @mediapipe/tasks-vision API (CDN)
    ============================================ */
 
-import {
-  HandLandmarker,
-  FilesetResolver,
-} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs";
-
 // ─── Constants ──────────────────────────────
-const PINCH_THRESHOLD = 0.18; // ratio — pinch distance relative to hand size (screen space)
-const SMOOTHING_BASE = 6; // base smoothing window size
-const SMOOTHING_MAX = 10; // max smoothing when hand is rotating fast
-const ROTATION_THRESHOLD = 0.15; // radians — angular change per frame to trigger extra smoothing
-const STROKE_WIDTH = 4;
+const PINCH_THRESHOLD = 0.05;       // meters — world coords
+const MIN_MOVE_THRESHOLD = 8;       // px
+const SMOOTHING_BUFFER_SIZE = 8;    // frames
+const DOT_HOLD_TIME = 200;          // ms
+const STROKE_WIDTH = 3;             // px
 const DEFAULT_COLOR = "#111111";
-const MIN_MOVE_DISTANCE = 10; // px — ignore movements smaller than this (tremor filter)
-const MAX_CURSOR_JUMP = 40; // px — ignore single-frame jumps larger than this (tracking error)
-const ERASER_RADIUS = 24; // px — how close a stroke point must be to erase it
-const STABLE_BLEND = 0.7; // weight for raw landmark vs chain-projected tip (0–1, higher = more raw)
-const MAX_GAP_FRAMES = 3; // max frames hand can be lost without breaking the stroke
-const HOLD_DOT_TIME = 200; // ms — how long to hold pinch without moving to draw a dot
+const ERASER_RADIUS = 24;           // px
+const MAX_GAP_FRAMES = 3;           // frames
 
 // ─── DOM Elements ───────────────────────────
 const video = document.getElementById("webcam");
-const canvas = document.getElementById("drawingCanvas");
-const ctx = canvas.getContext("2d");
+const drawCanvas = document.getElementById("drawingCanvas");
+const drawCtx = drawCanvas.getContext("2d");
+const skelCanvas = document.getElementById("skeletonCanvas");
+const skelCtx = skelCanvas.getContext("2d");
+const canvasPanel = document.getElementById("canvasPanel");
+const pipPanel = document.getElementById("pipPanel");
 const trackerDot = document.getElementById("trackerDot");
-const loadingOverlay = document.getElementById("loadingOverlay");
-const loadingStatus = document.getElementById("loadingStatus");
+const loadingOv = document.getElementById("loadingOverlay");
+const loadingTxt = document.getElementById("loadingStatus");
 const cameraDenied = document.getElementById("cameraDenied");
 const retryBtn = document.getElementById("retryCamera");
 const clearBtn = document.getElementById("clearCanvas");
 const eraserBtn = document.getElementById("eraserTool");
-const cameraToggleBtn = document.getElementById("cameraToggle");
-const cameraPip = document.getElementById("cameraPip");
+const camToggleBtn = document.getElementById("cameraToggle");
 const swatches = document.querySelectorAll(".color-swatch");
-const onboardingHint = document.getElementById("onboardingHint");
-const canvasArea = document.querySelector(".canvas-area");
+const onboardHint = document.getElementById("onboardingHint");
 
 // ─── State ──────────────────────────────────
 let handLandmarker = null;
-let currentColor = DEFAULT_COLOR;
-let isDrawing = false;
-let lastX = null;
-let lastY = null;
-let positionBuffer = []; // for rolling average smoothing
-let animFrameId = null;
+let drawingUtils = null;
+let color = DEFAULT_COLOR;
+let drawing = false;
+let lastX = null, lastY = null;   // last raw point
+let drawX = null, drawY = null;   // where last bezier ended
+let posBuffer = [];
+let lastVidTime = -1;
 let eraserMode = false;
-let prevHandAngle = null; // previous frame's wrist→middle-base angle
-let dynamicSmoothingWindow = SMOOTHING_BASE;
-let framesWithoutHand = 0; // count frames hand is missing for gap tolerance
-let lastSmoothedPos = null; // last known smoothed position for interpolation
-let cameraOn = true; // camera visibility toggle
-let pinchStartTime = null;
-let pinchStartPos = null;
-let hasMovedSincePinch = false;
-let dotDrawn = false;
-
-// ─── Stroke buffer for redraw on resize ─────
-// Each stroke: { color, width, points: [{x, y}] }
+let gapFrames = 0;
+let lastSmoothed = null;
+let camOn = true;
+let pinchT0 = null;
+let pinchP0 = null;
+let moved = false;
+let dotDone = false;
 let strokes = [];
-let currentStroke = null;
+let curStroke = null;
 
 // ─── Initialize ─────────────────────────────
 async function init() {
   try {
-    loadingStatus.textContent = "Loading hand tracking model…";
-    await initHandLandmarker();
-    loadingStatus.textContent = "Requesting camera access…";
+    loadingTxt.textContent = "Loading hand tracking model…";
+    const vision = await FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+    );
+    handLandmarker = await HandLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath:
+          "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+        delegate: "GPU",
+      },
+      runningMode: "VIDEO",
+      numHands: 1,
+      minHandDetectionConfidence: 0.7,
+      minHandPresenceConfidence: 0.7,
+      minTrackingConfidence: 0.7,
+    });
+    drawingUtils = new DrawingUtils(skelCtx);
+    loadingTxt.textContent = "Requesting camera access…";
     await startCamera();
   } catch (err) {
-    console.warn("Initialization failed:", err);
+    console.warn("Init failed:", err);
   }
-}
-
-// ─── MediaPipe Hand Landmarker ──────────────
-async function initHandLandmarker() {
-  const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
-  );
-
-  handLandmarker = await HandLandmarker.createFromOptions(vision, {
-    baseOptions: {
-      modelAssetPath:
-        "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
-      delegate: "GPU",
-    },
-    runningMode: "VIDEO",
-    numHands: 1,
-  });
 }
 
 // ─── Camera ─────────────────────────────────
@@ -98,373 +86,263 @@ async function startCamera() {
       video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
     });
     video.srcObject = stream;
-
-    // Clone video stream into PIP window
-    const pipVideo = document.createElement("video");
-    pipVideo.id = "webcamPip";
-    pipVideo.autoplay = true;
-    pipVideo.playsInline = true;
-    pipVideo.muted = true;
-    pipVideo.srcObject = stream;
-    pipVideo.style.width = "100%";
-    pipVideo.style.height = "100%";
-    pipVideo.style.objectFit = "cover";
-    pipVideo.style.transform = "scaleX(-1)";
-    cameraPip.insertBefore(pipVideo, cameraPip.firstChild);
-
-    video.addEventListener("loadeddata", onCameraReady);
+    video.addEventListener("loadeddata", () => {
+      resizeAll();
+      loadingOv.classList.add("hidden");
+      setTimeout(() => { loadingOv.style.display = "none"; }, 500);
+      detectLoop();
+    });
   } catch (err) {
-    console.warn("Camera access denied:", err);
-    showCameraDenied();
+    console.warn("Camera denied:", err);
+    loadingOv.style.display = "none";
+    cameraDenied.style.display = "flex";
   }
-}
-
-function onCameraReady() {
-  resizeCanvas();
-  // Hide loading overlay
-  loadingOverlay.classList.add("hidden");
-  setTimeout(() => {
-    loadingOverlay.style.display = "none";
-  }, 500);
-  // Start detection loop
-  detectLoop();
-}
-
-function showCameraDenied() {
-  loadingOverlay.style.display = "none";
-  cameraDenied.style.display = "flex";
 }
 
 retryBtn.addEventListener("click", () => {
   cameraDenied.style.display = "none";
-  loadingOverlay.style.display = "flex";
-  loadingOverlay.classList.remove("hidden");
+  loadingOv.style.display = "flex";
+  loadingOv.classList.remove("hidden");
   startCamera();
 });
 
-// ─── Canvas Resize ──────────────────────────
-function resizeCanvas() {
-  const rect = canvasArea.getBoundingClientRect();
-  canvas.width = rect.width;
-  canvas.height = rect.height;
+// ─── Canvas Sizing ──────────────────────────
+function resizeAll() {
+  const pr = canvasPanel.getBoundingClientRect();
+  drawCanvas.width = pr.width;
+  drawCanvas.height = pr.height;
+  const pip = pipPanel.getBoundingClientRect();
+  skelCanvas.width = pip.width;
+  skelCanvas.height = pip.height;
   redrawStrokes();
 }
 
 function redrawStrokes() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (const stroke of strokes) {
-    if (stroke.points.length < 2) continue;
-    ctx.beginPath();
-    ctx.strokeStyle = stroke.color;
-    ctx.lineWidth = stroke.width;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
-    const pts = stroke.points;
-    const toX = (p) => p.x * canvas.width;
-    const toY = (p) => p.y * canvas.height;
-
-    ctx.moveTo(toX(pts[0]), toY(pts[0]));
-
-    if (pts.length === 2) {
-      ctx.lineTo(toX(pts[1]), toY(pts[1]));
+  drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+  for (const s of strokes) {
+    if (s.points.length < 2) continue;
+    drawCtx.beginPath();
+    drawCtx.strokeStyle = s.color;
+    drawCtx.lineWidth = s.width;
+    drawCtx.lineCap = "round";
+    drawCtx.lineJoin = "round";
+    const p = s.points;
+    const tx = (pt) => pt.x * drawCanvas.width;
+    const ty = (pt) => pt.y * drawCanvas.height;
+    drawCtx.moveTo(tx(p[0]), ty(p[0]));
+    if (p.length === 2) {
+      drawCtx.lineTo(tx(p[1]), ty(p[1]));
     } else {
-      // Quadratic bezier through midpoints for smooth curves
-      for (let i = 1; i < pts.length - 1; i++) {
-        const midX = (toX(pts[i]) + toX(pts[i + 1])) / 2;
-        const midY = (toY(pts[i]) + toY(pts[i + 1])) / 2;
-        ctx.quadraticCurveTo(toX(pts[i]), toY(pts[i]), midX, midY);
+      for (let i = 1; i < p.length - 1; i++) {
+        const mx = (tx(p[i]) + tx(p[i + 1])) / 2;
+        const my = (ty(p[i]) + ty(p[i + 1])) / 2;
+        drawCtx.quadraticCurveTo(tx(p[i]), ty(p[i]), mx, my);
       }
-      // Draw to the last point
-      ctx.lineTo(toX(pts[pts.length - 1]), toY(pts[pts.length - 1]));
+      drawCtx.lineTo(tx(p[p.length - 1]), ty(p[p.length - 1]));
     }
-    ctx.stroke();
+    drawCtx.stroke();
   }
 }
 
-window.addEventListener("resize", resizeCanvas);
+window.addEventListener("resize", resizeAll);
 
 // ─── Detection Loop ─────────────────────────
 function detectLoop() {
   if (!handLandmarker || !video.videoWidth) {
-    animFrameId = requestAnimationFrame(detectLoop);
+    requestAnimationFrame(detectLoop);
     return;
   }
-
-  // Force detection on every animation frame (max speed)
-  const now = performance.now();
-  const results = handLandmarker.detectForVideo(video, now);
-  processResults(results);
-
-  animFrameId = requestAnimationFrame(detectLoop);
-}
-
-// ─── Stabilized Fingertip Position ──────────
-function getStableFingertip(landmarks) {
-  const dip = landmarks[7];
-  const tip = landmarks[8];
-
-  const dirX = tip.x - dip.x;
-  const dirY = tip.y - dip.y;
-
-  const projX = dip.x + dirX;
-  const projY = dip.y + dirY;
-
-  return {
-    x: tip.x * STABLE_BLEND + projX * (1 - STABLE_BLEND),
-    y: tip.y * STABLE_BLEND + projY * (1 - STABLE_BLEND),
-  };
-}
-
-// ─── Hand Rotation Detection ────────────────
-function getHandAngle(landmarks) {
-  const wrist = landmarks[0];
-  const middleBase = landmarks[9];
-  return Math.atan2(middleBase.y - wrist.y, middleBase.x - wrist.x);
-}
-
-// ─── Coordinate Mapping ─────────────────────
-// Maps normalized MediaPipe landmark coordinates (0-1) to the canvas element's
-// exact pixel coordinates using getBoundingClientRect().
-// The canvas is NOT the full window — it's a bounded area within the layout.
-function mapToCanvas(normX, normY) {
-  // Mirror X for selfie view, then scale to canvas dimensions
-  return {
-    x: (1 - normX) * canvas.width,
-    y: normY * canvas.height,
-  };
-}
-
-// ─── Process Hand Landmarks ─────────────────
-function processResults(results) {
-  if (!results || !results.landmarks || results.landmarks.length === 0) {
-    framesWithoutHand++;
-    if (framesWithoutHand > MAX_GAP_FRAMES) {
-      trackerDot.classList.remove("visible", "drawing");
-      if (isDrawing) {
-        stopDrawing();
-      }
-      positionBuffer = [];
-      prevHandAngle = null;
-      lastSmoothedPos = null;
-      pinchStartTime = null;
-    }
-    return;
+  const nowMs = performance.now();
+  if (video.currentTime !== lastVidTime) {
+    lastVidTime = video.currentTime;
+    const results = handLandmarker.detectForVideo(video, nowMs);
+    processResults(results);
   }
-
-  const landmarks = results.landmarks[0];
-
-  // ── Stabilized fingertip ──
-  const stableTip = getStableFingertip(landmarks);
-
-  // Map to canvas coordinates (not window coordinates)
-  const mapped = mapToCanvas(stableTip.x, stableTip.y);
-  const rawX = mapped.x;
-  const rawY = mapped.y;
-
-  // ── Jump Filter ──
-  if (positionBuffer.length > 0) {
-    const lastRaw = positionBuffer[positionBuffer.length - 1];
-    const jumpDist = Math.hypot(rawX - lastRaw.x, rawY - lastRaw.y);
-
-    if (jumpDist > MAX_CURSOR_JUMP) {
-      framesWithoutHand++;
-      if (framesWithoutHand > MAX_GAP_FRAMES) {
-        trackerDot.classList.remove("visible", "drawing");
-        if (isDrawing) stopDrawing();
-        positionBuffer = [];
-        prevHandAngle = null;
-        lastSmoothedPos = null;
-        pinchStartTime = null;
-      }
-      return;
-    }
-  }
-
-  framesWithoutHand = 0;
-
-  // ── Adaptive smoothing based on hand rotation ──
-  const currentAngle = getHandAngle(landmarks);
-  if (prevHandAngle !== null) {
-    let angleDelta = Math.abs(currentAngle - prevHandAngle);
-    if (angleDelta > Math.PI) angleDelta = 2 * Math.PI - angleDelta;
-
-    if (angleDelta > ROTATION_THRESHOLD) {
-      dynamicSmoothingWindow = Math.min(dynamicSmoothingWindow + 2, SMOOTHING_MAX);
-    } else {
-      dynamicSmoothingWindow = Math.max(dynamicSmoothingWindow - 1, SMOOTHING_BASE);
-    }
-  }
-  prevHandAngle = currentAngle;
-
-  // Smooth position with rolling average (dynamic window)
-  positionBuffer.push({ x: rawX, y: rawY });
-  while (positionBuffer.length > dynamicSmoothingWindow) {
-    positionBuffer.shift();
-  }
-
-  const smoothed = getSmoothedPosition();
-
-  // ── Interpolate if hand was briefly lost during drawing ──
-  if (framesWithoutHand > 0 && framesWithoutHand <= MAX_GAP_FRAMES && isDrawing && lastSmoothedPos) {
-    const steps = framesWithoutHand;
-    for (let i = 1; i <= steps; i++) {
-      const t = i / (steps + 1);
-      const interpX = lastSmoothedPos.x + (smoothed.x - lastSmoothedPos.x) * t;
-      const interpY = lastSmoothedPos.y + (smoothed.y - lastSmoothedPos.y) * t;
-      drawTo(interpX, interpY);
-    }
-  }
-  lastSmoothedPos = { x: smoothed.x, y: smoothed.y };
-
-  // Update tracker dot (positioned relative to the canvas area)
-  trackerDot.style.left = smoothed.x + "px";
-  trackerDot.style.top = smoothed.y + "px";
-  trackerDot.classList.add("visible");
-
-  // Pinch detection — normalized by hand size
-  const thumbTip = landmarks[4];
-  const mappedThumb = mapToCanvas(thumbTip.x, thumbTip.y);
-
-  const mappedWrist = mapToCanvas(landmarks[0].x, landmarks[0].y);
-  const mappedMiddleMCP = mapToCanvas(landmarks[9].x, landmarks[9].y);
-
-  const handSize = Math.hypot(
-    mappedMiddleMCP.x - mappedWrist.x,
-    mappedMiddleMCP.y - mappedWrist.y
-  );
-
-  const pinchDist = Math.hypot(smoothed.x - mappedThumb.x, smoothed.y - mappedThumb.y);
-  const pinchRatio = pinchDist / (handSize || 1);
-
-  console.log("Pinch Ratio:", pinchRatio.toFixed(3), "| Dist:", Math.round(pinchDist), "Size:", Math.round(handSize));
-
-  if (pinchRatio < PINCH_THRESHOLD) {
-    trackerDot.classList.add("drawing");
-    if (eraserMode) {
-      eraseAt(smoothed.x, smoothed.y);
-    } else {
-      if (!isDrawing) {
-        startDrawing(smoothed.x, smoothed.y);
-        pinchStartTime = performance.now();
-        pinchStartPos = { x: smoothed.x, y: smoothed.y };
-        hasMovedSincePinch = false;
-        dotDrawn = false;
-      } else {
-        if (!hasMovedSincePinch) {
-          const distFromStart = Math.hypot(smoothed.x - pinchStartPos.x, smoothed.y - pinchStartPos.y);
-          if (distFromStart >= MIN_MOVE_DISTANCE) {
-            hasMovedSincePinch = true;
-          } else if (!dotDrawn && (performance.now() - pinchStartTime > HOLD_DOT_TIME)) {
-            ctx.beginPath();
-            ctx.moveTo(pinchStartPos.x, pinchStartPos.y);
-            ctx.lineTo(pinchStartPos.x, pinchStartPos.y);
-            ctx.strokeStyle = currentColor;
-            ctx.lineWidth = STROKE_WIDTH;
-            ctx.lineCap = "round";
-            ctx.lineJoin = "round";
-            ctx.stroke();
-            if (currentStroke) {
-              currentStroke.points.push({ x: pinchStartPos.x / canvas.width, y: pinchStartPos.y / canvas.height });
-            }
-            dotDrawn = true;
-          }
-        }
-        drawTo(smoothed.x, smoothed.y);
-      }
-    }
-  } else {
-    trackerDot.classList.remove("drawing");
-    if (isDrawing) {
-      stopDrawing();
-    }
-    pinchStartTime = null;
-  }
+  requestAnimationFrame(detectLoop);
 }
 
 // ─── Smoothing ──────────────────────────────
-function getSmoothedPosition() {
-  if (positionBuffer.length === 0) return { x: 0, y: 0 };
+function smooth(rx, ry) {
+  posBuffer.push({ x: rx, y: ry });
+  if (posBuffer.length > SMOOTHING_BUFFER_SIZE) posBuffer.shift();
+  let tw = 0, sx = 0, sy = 0;
+  posBuffer.forEach((p, i) => {
+    const w = i + 1;
+    sx += p.x * w;
+    sy += p.y * w;
+    tw += w;
+  });
+  return { x: sx / tw, y: sy / tw };
+}
 
-  let sumX = 0, sumY = 0, weightSum = 0;
-  for (let i = 0; i < positionBuffer.length; i++) {
-    const weight = i + 1;
-    sumX += positionBuffer[i].x * weight;
-    sumY += positionBuffer[i].y * weight;
-    weightSum += weight;
+// ─── Process Results ────────────────────────
+function processResults(results) {
+  // Clear skeleton overlay every frame
+  skelCtx.clearRect(0, 0, skelCanvas.width, skelCanvas.height);
+
+  if (!results || !results.landmarks || results.landmarks.length === 0) {
+    gapFrames++;
+    if (gapFrames > MAX_GAP_FRAMES) {
+      trackerDot.classList.remove("visible", "drawing");
+      if (drawing) stopDraw();
+      posBuffer = [];
+      lastSmoothed = null;
+      pinchT0 = null;
+    }
+    return;
   }
-  return {
-    x: sumX / weightSum,
-    y: sumY / weightSum,
-  };
+
+  const lm = results.landmarks[0];
+
+  // ── Skeleton on PIP ──
+  drawingUtils.drawConnectors(lm, HandLandmarker.HAND_CONNECTIONS, {
+    color: "#00FF00", lineWidth: 2,
+  });
+  drawingUtils.drawLandmarks(lm, {
+    color: "#FF0000", radius: 4,
+  });
+
+  // ── Coordinate mapping to drawing canvas panel ──
+  const rect = drawCanvas.getBoundingClientRect();
+  const idx = lm[8]; // index fingertip
+  const canvasX = (1 - idx.x) * rect.width;
+  const canvasY = idx.y * rect.height;
+
+  const sm = smooth(canvasX, canvasY);
+
+  // ── Gap interpolation ──
+  if (gapFrames > 0 && gapFrames <= MAX_GAP_FRAMES && drawing && lastSmoothed) {
+    for (let i = 1; i <= gapFrames; i++) {
+      const t = i / (gapFrames + 1);
+      drawTo(
+        lastSmoothed.x + (sm.x - lastSmoothed.x) * t,
+        lastSmoothed.y + (sm.y - lastSmoothed.y) * t
+      );
+    }
+  }
+  gapFrames = 0;
+  lastSmoothed = { x: sm.x, y: sm.y };
+
+  // ── Tracker dot (screen coords) ──
+  trackerDot.style.left = (sm.x + rect.left) + "px";
+  trackerDot.style.top = (sm.y + rect.top) + "px";
+  trackerDot.classList.add("visible");
+
+  // ── Pinch detection via worldLandmarks ──
+  const wl = results.worldLandmarks[0];
+  const t4 = wl[4], t8 = wl[8];
+  const pd = Math.sqrt(
+    (t4.x - t8.x) ** 2 + (t4.y - t8.y) ** 2 + (t4.z - t8.z) ** 2
+  );
+  const pinch = pd < PINCH_THRESHOLD;
+
+  if (pinch) {
+    trackerDot.classList.add("drawing");
+    if (eraserMode) {
+      eraseAt(sm.x, sm.y);
+    } else if (!drawing) {
+      startDraw(sm.x, sm.y);
+      pinchT0 = performance.now();
+      pinchP0 = { x: sm.x, y: sm.y };
+      moved = false;
+      dotDone = false;
+    } else {
+      // Hold-to-dot detection
+      if (!moved) {
+        const d = Math.hypot(sm.x - pinchP0.x, sm.y - pinchP0.y);
+        if (d >= MIN_MOVE_THRESHOLD) {
+          moved = true;
+        } else if (!dotDone && performance.now() - pinchT0 > DOT_HOLD_TIME) {
+          drawCtx.beginPath();
+          drawCtx.moveTo(pinchP0.x, pinchP0.y);
+          drawCtx.lineTo(pinchP0.x + 0.1, pinchP0.y);
+          drawCtx.strokeStyle = color;
+          drawCtx.lineWidth = STROKE_WIDTH;
+          drawCtx.lineCap = "round";
+          drawCtx.stroke();
+          if (curStroke) {
+            curStroke.points.push({
+              x: pinchP0.x / drawCanvas.width,
+              y: pinchP0.y / drawCanvas.height,
+            });
+          }
+          dotDone = true;
+        }
+      }
+      drawTo(sm.x, sm.y);
+    }
+  } else {
+    trackerDot.classList.remove("drawing");
+    if (drawing) stopDraw();
+    pinchT0 = null;
+  }
 }
 
 // ─── Drawing ────────────────────────────────
-function startDrawing(x, y) {
-  isDrawing = true;
-  lastX = x;
-  lastY = y;
-  currentStroke = {
-    color: currentColor,
+function startDraw(x, y) {
+  drawing = true;
+  lastX = x; lastY = y;
+  drawX = x; drawY = y;
+  curStroke = {
+    color: color,
     width: STROKE_WIDTH,
-    points: [{ x: x / canvas.width, y: y / canvas.height }],
+    points: [{ x: x / drawCanvas.width, y: y / drawCanvas.height }],
   };
 }
 
 function drawTo(x, y) {
-  if (lastX === null || lastY === null) {
-    lastX = x;
-    lastY = y;
-    return;
+  if (lastX === null) { lastX = x; lastY = y; drawX = x; drawY = y; return; }
+  const d = Math.hypot(x - lastX, y - lastY);
+  if (d < MIN_MOVE_THRESHOLD) return;
+
+  const mx = (lastX + x) / 2;
+  const my = (lastY + y) / 2;
+  drawCtx.beginPath();
+  drawCtx.moveTo(drawX, drawY);
+  drawCtx.quadraticCurveTo(lastX, lastY, mx, my);
+  drawCtx.strokeStyle = color;
+  drawCtx.lineWidth = STROKE_WIDTH;
+  drawCtx.lineCap = "round";
+  drawCtx.lineJoin = "round";
+  drawCtx.stroke();
+
+  if (curStroke) {
+    curStroke.points.push({ x: x / drawCanvas.width, y: y / drawCanvas.height });
   }
-
-  const dist = Math.hypot(x - lastX, y - lastY);
-  if (dist < MIN_MOVE_DISTANCE) return;
-
-  ctx.beginPath();
-  ctx.moveTo(lastX, lastY);
-  ctx.lineTo(x, y);
-  ctx.strokeStyle = currentColor;
-  ctx.lineWidth = STROKE_WIDTH;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  ctx.stroke();
-
-  if (currentStroke) {
-    currentStroke.points.push({ x: x / canvas.width, y: y / canvas.height });
-  }
-
-  lastX = x;
-  lastY = y;
+  drawX = mx; drawY = my;
+  lastX = x; lastY = y;
 }
 
-function stopDrawing() {
-  isDrawing = false;
-  lastX = null;
-  lastY = null;
-  if (currentStroke && currentStroke.points.length > 1) {
-    strokes.push(currentStroke);
+function stopDraw() {
+  if (drawX !== null && lastX !== null && (drawX !== lastX || drawY !== lastY)) {
+    drawCtx.beginPath();
+    drawCtx.moveTo(drawX, drawY);
+    drawCtx.lineTo(lastX, lastY);
+    drawCtx.strokeStyle = color;
+    drawCtx.lineWidth = STROKE_WIDTH;
+    drawCtx.lineCap = "round";
+    drawCtx.lineJoin = "round";
+    drawCtx.stroke();
   }
-  currentStroke = null;
+  drawing = false;
+  lastX = lastY = drawX = drawY = null;
+  if (curStroke && curStroke.points.length > 1) strokes.push(curStroke);
+  curStroke = null;
 }
 
 // ─── Eraser ─────────────────────────────────
 function eraseAt(x, y) {
-  const nx = x / canvas.width;
-  const ny = y / canvas.height;
-  const radiusNX = ERASER_RADIUS / canvas.width;
-  const radiusNY = ERASER_RADIUS / canvas.height;
-
-  strokes = strokes.filter((stroke) => {
-    return !stroke.points.some((p) => {
-      const dx = p.x - nx;
-      const dy = p.y - ny;
-      return Math.hypot(dx / radiusNX, dy / radiusNY) < 1;
-    });
-  });
+  const nx = x / drawCanvas.width;
+  const ny = y / drawCanvas.height;
+  const rx = ERASER_RADIUS / drawCanvas.width;
+  const ry = ERASER_RADIUS / drawCanvas.height;
+  strokes = strokes.filter((s) =>
+    !s.points.some((p) => Math.hypot((p.x - nx) / rx, (p.y - ny) / ry) < 1)
+  );
   redrawStrokes();
 }
 
+// ─── Event Listeners ────────────────────────
 eraserBtn.addEventListener("click", () => {
   eraserMode = !eraserMode;
   eraserBtn.classList.toggle("active", eraserMode);
@@ -473,40 +351,36 @@ eraserBtn.addEventListener("click", () => {
     swatches.forEach((s) => s.classList.remove("active"));
   } else {
     swatches.forEach((s) => {
-      if (s.dataset.color === currentColor) s.classList.add("active");
+      if (s.dataset.color === color) s.classList.add("active");
     });
   }
 });
 
-// ─── Color Selection ────────────────────────
-swatches.forEach((swatch) => {
-  swatch.addEventListener("click", () => {
+swatches.forEach((sw) => {
+  sw.addEventListener("click", () => {
     swatches.forEach((s) => s.classList.remove("active"));
-    swatch.classList.add("active");
-    currentColor = swatch.dataset.color;
+    sw.classList.add("active");
+    color = sw.dataset.color;
     eraserMode = false;
     eraserBtn.classList.remove("active");
     trackerDot.classList.remove("erasing");
   });
 });
 
-// ─── Clear Canvas ───────────────────────────
 clearBtn.addEventListener("click", () => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
   strokes = [];
-  currentStroke = null;
+  curStroke = null;
 });
 
-// ─── Camera Toggle ──────────────────────────
-cameraToggleBtn.addEventListener("click", () => {
-  cameraOn = !cameraOn;
-  cameraPip.classList.toggle("hidden", !cameraOn);
-  cameraToggleBtn.classList.toggle("active", !cameraOn);
+camToggleBtn.addEventListener("click", () => {
+  camOn = !camOn;
+  pipPanel.style.opacity = camOn ? "1" : "0";
+  camToggleBtn.classList.toggle("active", !camOn);
 });
 
-// ─── Remove onboarding hint after animation ─
-onboardingHint.addEventListener("animationend", () => {
-  onboardingHint.style.display = "none";
+onboardHint.addEventListener("animationend", () => {
+  onboardHint.style.display = "none";
 });
 
 // ─── Start ──────────────────────────────────
