@@ -86,8 +86,11 @@ async function startCamera() {
       video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
     });
     video.srcObject = stream;
-    video.addEventListener("loadeddata", () => {
+    video.addEventListener("loadedmetadata", () => {
+      // Setup base sizes once metadata is available
       resizeAll();
+    });
+    video.addEventListener("loadeddata", () => {
       loadingOv.classList.add("hidden");
       setTimeout(() => { loadingOv.style.display = "none"; }, 500);
       detectLoop();
@@ -111,9 +114,17 @@ function resizeAll() {
   const pr = canvasPanel.getBoundingClientRect();
   drawCanvas.width = pr.width;
   drawCanvas.height = pr.height;
-  const pip = pipPanel.getBoundingClientRect();
-  skelCanvas.width = pip.width;
-  skelCanvas.height = pip.height;
+
+  if (video.videoWidth && video.videoHeight) {
+    // Set skeleton to match video internal resolution so DrawingUtils logic is aligned
+    skelCanvas.width = video.videoWidth;
+    skelCanvas.height = video.videoHeight;
+  } else {
+    const pip = pipPanel.getBoundingClientRect();
+    skelCanvas.width = pip.width;
+    skelCanvas.height = pip.height;
+  }
+
   redrawStrokes();
 }
 
@@ -203,12 +214,35 @@ function processResults(results) {
   });
 
   // ── Coordinate mapping to drawing canvas panel ──
+  // 1) Match video tracking dimensions preserving aspect ratio so curves stay perfect
   const rect = drawCanvas.getBoundingClientRect();
-  const idx = lm[8]; // index fingertip
-  const canvasX = (1 - idx.x) * rect.width;
-  const canvasY = idx.y * rect.height;
+  const vidRect = video.getBoundingClientRect(); // get actual rendered size
 
-  const sm = smooth(canvasX, canvasY);
+  const vw = video.videoWidth || 1280;
+  const vh = video.videoHeight || 720;
+
+  // Use scale to uniformly map the 16:9 feed to the canvas geometry
+  const scale = Math.max(rect.width / vw, rect.height / vh);
+  const renderWidth = vw * scale;
+  const renderHeight = vh * scale;
+
+  // Account for letterboxing / bounding offsets
+  const offsetX = (rect.width - renderWidth) / 2;
+  const offsetY = (rect.height - renderHeight) / 2;
+
+  const idx = lm[8]; // index fingertip
+  const finalX = (1 - idx.x) * renderWidth + offsetX;
+  const finalY = idx.y * renderHeight + offsetY;
+
+  console.log(
+    "raw x:", idx.x,
+    "| mirrored x:", 1 - idx.x,
+    "| video rendered:", vidRect.width + "x" + vidRect.height,
+    "| actual scale:", scale.toFixed(2),
+    "| final canvasX:", finalX
+  );
+
+  const sm = smooth(finalX, finalY);
 
   // ── Gap interpolation ──
   if (gapFrames > 0 && gapFrames <= MAX_GAP_FRAMES && drawing && lastSmoothed) {
