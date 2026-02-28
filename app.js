@@ -8,16 +8,18 @@ import {
 } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs";
 
 // ─── Constants ──────────────────────────────
-const PINCH_THRESHOLD = 40; // px — distance between thumb tip & index tip to trigger draw
-const SMOOTHING_BASE = 10; // base smoothing window size
-const SMOOTHING_MAX = 16; // max smoothing when hand is rotating fast
+const PINCH_THRESHOLD = 0.18; // ratio — pinch distance relative to hand size (screen space)
+const SMOOTHING_BASE = 6; // base smoothing window size
+const SMOOTHING_MAX = 10; // max smoothing when hand is rotating fast
 const ROTATION_THRESHOLD = 0.15; // radians — angular change per frame to trigger extra smoothing
 const STROKE_WIDTH = 4;
 const DEFAULT_COLOR = "#111111";
-const MIN_MOVE_DISTANCE = 3; // px — ignore movements smaller than this
+const MIN_MOVE_DISTANCE = 10; // px — ignore movements smaller than this (tremor filter)
+const MAX_CURSOR_JUMP = 40; // px — ignore single-frame jumps larger than this (tracking error)
 const ERASER_RADIUS = 24; // px — how close a stroke point must be to erase it
 const STABLE_BLEND = 0.7; // weight for raw landmark vs chain-projected tip (0–1, higher = more raw)
 const MAX_GAP_FRAMES = 3; // max frames hand can be lost without breaking the stroke
+const HOLD_DOT_TIME = 200; // ms — how long to hold pinch without moving to draw a dot
 
 // ─── DOM Elements ───────────────────────────
 const video = document.getElementById("webcam");
@@ -31,8 +33,10 @@ const retryBtn = document.getElementById("retryCamera");
 const clearBtn = document.getElementById("clearCanvas");
 const eraserBtn = document.getElementById("eraserTool");
 const cameraToggleBtn = document.getElementById("cameraToggle");
+const cameraPip = document.getElementById("cameraPip");
 const swatches = document.querySelectorAll(".color-swatch");
 const onboardingHint = document.getElementById("onboardingHint");
+const canvasArea = document.querySelector(".canvas-area");
 
 // ─── State ──────────────────────────────────
 let handLandmarker = null;
@@ -42,13 +46,16 @@ let lastX = null;
 let lastY = null;
 let positionBuffer = []; // for rolling average smoothing
 let animFrameId = null;
-let lastVideoTime = -1;
 let eraserMode = false;
 let prevHandAngle = null; // previous frame's wrist→middle-base angle
 let dynamicSmoothingWindow = SMOOTHING_BASE;
 let framesWithoutHand = 0; // count frames hand is missing for gap tolerance
 let lastSmoothedPos = null; // last known smoothed position for interpolation
 let cameraOn = true; // camera visibility toggle
+let pinchStartTime = null;
+let pinchStartPos = null;
+let hasMovedSincePinch = false;
+let dotDrawn = false;
 
 // ─── Stroke buffer for redraw on resize ─────
 // Each stroke: { color, width, points: [{x, y}] }
@@ -91,6 +98,20 @@ async function startCamera() {
       video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
     });
     video.srcObject = stream;
+
+    // Clone video stream into PIP window
+    const pipVideo = document.createElement("video");
+    pipVideo.id = "webcamPip";
+    pipVideo.autoplay = true;
+    pipVideo.playsInline = true;
+    pipVideo.muted = true;
+    pipVideo.srcObject = stream;
+    pipVideo.style.width = "100%";
+    pipVideo.style.height = "100%";
+    pipVideo.style.objectFit = "cover";
+    pipVideo.style.transform = "scaleX(-1)";
+    cameraPip.insertBefore(pipVideo, cameraPip.firstChild);
+
     video.addEventListener("loadeddata", onCameraReady);
   } catch (err) {
     console.warn("Camera access denied:", err);
@@ -123,8 +144,9 @@ retryBtn.addEventListener("click", () => {
 
 // ─── Canvas Resize ──────────────────────────
 function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  const rect = canvasArea.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
   redrawStrokes();
 }
 
@@ -169,39 +191,25 @@ function detectLoop() {
     return;
   }
 
+  // Force detection on every animation frame (max speed)
   const now = performance.now();
-  if (video.currentTime !== lastVideoTime) {
-    lastVideoTime = video.currentTime;
-    const results = handLandmarker.detectForVideo(video, now);
-    processResults(results);
-  }
+  const results = handLandmarker.detectForVideo(video, now);
+  processResults(results);
 
   animFrameId = requestAnimationFrame(detectLoop);
 }
 
 // ─── Stabilized Fingertip Position ──────────
-// Blends the raw landmark #8 with a position projected along the
-// index finger kinematic chain (#5 MCP → #6 PIP → #7 DIP → #8 TIP).
-// This produces a more stable tip position when the hand rotates,
-// because the chain direction is less noisy than the raw tip alone.
 function getStableFingertip(landmarks) {
-  const mcp = landmarks[5];  // Index MCP (base)
-  const pip = landmarks[6];  // Index PIP
-  const dip = landmarks[7];  // Index DIP
-  const tip = landmarks[8];  // Index TIP (raw)
+  const dip = landmarks[7];
+  const tip = landmarks[8];
 
-  // Direction along the last two joints (DIP → TIP)
   const dirX = tip.x - dip.x;
   const dirY = tip.y - dip.y;
 
-  // Length from DIP to TIP
-  const segLen = Math.hypot(dirX, dirY) || 0.001;
-
-  // Project from DIP along that direction by the same length
   const projX = dip.x + dirX;
   const projY = dip.y + dirY;
 
-  // Blend: STABLE_BLEND of raw tip + (1 - STABLE_BLEND) of chain-projected
   return {
     x: tip.x * STABLE_BLEND + projX * (1 - STABLE_BLEND),
     y: tip.y * STABLE_BLEND + projY * (1 - STABLE_BLEND),
@@ -209,12 +217,22 @@ function getStableFingertip(landmarks) {
 }
 
 // ─── Hand Rotation Detection ────────────────
-// Returns the angle (radians) from wrist (#0) to middle finger base (#9).
-// Changes in this angle between frames indicate hand rotation.
 function getHandAngle(landmarks) {
   const wrist = landmarks[0];
   const middleBase = landmarks[9];
   return Math.atan2(middleBase.y - wrist.y, middleBase.x - wrist.x);
+}
+
+// ─── Coordinate Mapping ─────────────────────
+// Maps normalized MediaPipe landmark coordinates (0-1) to the canvas element's
+// exact pixel coordinates using getBoundingClientRect().
+// The canvas is NOT the full window — it's a bounded area within the layout.
+function mapToCanvas(normX, normY) {
+  // Mirror X for selfie view, then scale to canvas dimensions
+  return {
+    x: (1 - normX) * canvas.width,
+    y: normY * canvas.height,
+  };
 }
 
 // ─── Process Hand Landmarks ─────────────────
@@ -222,7 +240,6 @@ function processResults(results) {
   if (!results || !results.landmarks || results.landmarks.length === 0) {
     framesWithoutHand++;
     if (framesWithoutHand > MAX_GAP_FRAMES) {
-      // Too many frames without hand — stop drawing and reset
       trackerDot.classList.remove("visible", "drawing");
       if (isDrawing) {
         stopDrawing();
@@ -230,33 +247,51 @@ function processResults(results) {
       positionBuffer = [];
       prevHandAngle = null;
       lastSmoothedPos = null;
+      pinchStartTime = null;
     }
-    // If within gap tolerance during drawing, keep state alive
     return;
   }
 
-  const landmarks = results.landmarks[0]; // First hand
-  const thumbTip = landmarks[4]; // Thumb tip
+  const landmarks = results.landmarks[0];
 
   // ── Stabilized fingertip ──
   const stableTip = getStableFingertip(landmarks);
 
-  // Mirror X and convert to screen coordinates
-  const rawX = (1 - stableTip.x) * canvas.width;
-  const rawY = stableTip.y * canvas.height;
+  // Map to canvas coordinates (not window coordinates)
+  const mapped = mapToCanvas(stableTip.x, stableTip.y);
+  const rawX = mapped.x;
+  const rawY = mapped.y;
+
+  // ── Jump Filter ──
+  if (positionBuffer.length > 0) {
+    const lastRaw = positionBuffer[positionBuffer.length - 1];
+    const jumpDist = Math.hypot(rawX - lastRaw.x, rawY - lastRaw.y);
+
+    if (jumpDist > MAX_CURSOR_JUMP) {
+      framesWithoutHand++;
+      if (framesWithoutHand > MAX_GAP_FRAMES) {
+        trackerDot.classList.remove("visible", "drawing");
+        if (isDrawing) stopDrawing();
+        positionBuffer = [];
+        prevHandAngle = null;
+        lastSmoothedPos = null;
+        pinchStartTime = null;
+      }
+      return;
+    }
+  }
+
+  framesWithoutHand = 0;
 
   // ── Adaptive smoothing based on hand rotation ──
   const currentAngle = getHandAngle(landmarks);
   if (prevHandAngle !== null) {
     let angleDelta = Math.abs(currentAngle - prevHandAngle);
-    // Handle wrap-around at ±π
     if (angleDelta > Math.PI) angleDelta = 2 * Math.PI - angleDelta;
 
     if (angleDelta > ROTATION_THRESHOLD) {
-      // Hand is rotating fast — increase smoothing to dampen jitter
       dynamicSmoothingWindow = Math.min(dynamicSmoothingWindow + 2, SMOOTHING_MAX);
     } else {
-      // Hand is stable — ease back towards base smoothing
       dynamicSmoothingWindow = Math.max(dynamicSmoothingWindow - 1, SMOOTHING_BASE);
     }
   }
@@ -280,51 +315,87 @@ function processResults(results) {
       drawTo(interpX, interpY);
     }
   }
-  framesWithoutHand = 0;
   lastSmoothedPos = { x: smoothed.x, y: smoothed.y };
 
-  // Update tracker dot
+  // Update tracker dot (positioned relative to the canvas area)
   trackerDot.style.left = smoothed.x + "px";
   trackerDot.style.top = smoothed.y + "px";
   trackerDot.classList.add("visible");
 
-  // Pinch detection — distance between thumb tip and index tip in screen space
-  const thumbX = (1 - thumbTip.x) * canvas.width;
-  const thumbY = thumbTip.y * canvas.height;
-  const pinchDist = Math.hypot(smoothed.x - thumbX, smoothed.y - thumbY);
+  // Pinch detection — normalized by hand size
+  const thumbTip = landmarks[4];
+  const mappedThumb = mapToCanvas(thumbTip.x, thumbTip.y);
 
-  if (pinchDist < PINCH_THRESHOLD) {
+  const mappedWrist = mapToCanvas(landmarks[0].x, landmarks[0].y);
+  const mappedMiddleMCP = mapToCanvas(landmarks[9].x, landmarks[9].y);
+
+  const handSize = Math.hypot(
+    mappedMiddleMCP.x - mappedWrist.x,
+    mappedMiddleMCP.y - mappedWrist.y
+  );
+
+  const pinchDist = Math.hypot(smoothed.x - mappedThumb.x, smoothed.y - mappedThumb.y);
+  const pinchRatio = pinchDist / (handSize || 1);
+
+  console.log("Pinch Ratio:", pinchRatio.toFixed(3), "| Dist:", Math.round(pinchDist), "Size:", Math.round(handSize));
+
+  if (pinchRatio < PINCH_THRESHOLD) {
     trackerDot.classList.add("drawing");
     if (eraserMode) {
-      // Eraser mode — remove strokes near cursor
       eraseAt(smoothed.x, smoothed.y);
     } else {
-      // Drawing mode
       if (!isDrawing) {
         startDrawing(smoothed.x, smoothed.y);
+        pinchStartTime = performance.now();
+        pinchStartPos = { x: smoothed.x, y: smoothed.y };
+        hasMovedSincePinch = false;
+        dotDrawn = false;
       } else {
+        if (!hasMovedSincePinch) {
+          const distFromStart = Math.hypot(smoothed.x - pinchStartPos.x, smoothed.y - pinchStartPos.y);
+          if (distFromStart >= MIN_MOVE_DISTANCE) {
+            hasMovedSincePinch = true;
+          } else if (!dotDrawn && (performance.now() - pinchStartTime > HOLD_DOT_TIME)) {
+            ctx.beginPath();
+            ctx.moveTo(pinchStartPos.x, pinchStartPos.y);
+            ctx.lineTo(pinchStartPos.x, pinchStartPos.y);
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = STROKE_WIDTH;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+            ctx.stroke();
+            if (currentStroke) {
+              currentStroke.points.push({ x: pinchStartPos.x / canvas.width, y: pinchStartPos.y / canvas.height });
+            }
+            dotDrawn = true;
+          }
+        }
         drawTo(smoothed.x, smoothed.y);
       }
     }
   } else {
-    // Not pinching — stop drawing
     trackerDot.classList.remove("drawing");
     if (isDrawing) {
       stopDrawing();
     }
+    pinchStartTime = null;
   }
 }
 
 // ─── Smoothing ──────────────────────────────
 function getSmoothedPosition() {
   if (positionBuffer.length === 0) return { x: 0, y: 0 };
-  const sum = positionBuffer.reduce(
-    (acc, pos) => ({ x: acc.x + pos.x, y: acc.y + pos.y }),
-    { x: 0, y: 0 }
-  );
+
+  let sumX = 0, sumY = 0, weightSum = 0;
+  for (let i = 0; i < positionBuffer.length; i++) {
+    const weight = i + 1;
+    sumX += positionBuffer[i].x * weight;
+    sumY += positionBuffer[i].y * weight;
+    weightSum += weight;
+  }
   return {
-    x: sum.x / positionBuffer.length,
-    y: sum.y / positionBuffer.length,
+    x: sumX / weightSum,
+    y: sumY / weightSum,
   };
 }
 
@@ -333,7 +404,6 @@ function startDrawing(x, y) {
   isDrawing = true;
   lastX = x;
   lastY = y;
-  // Start a new stroke in buffer (store normalized coords for resize redraw)
   currentStroke = {
     color: currentColor,
     width: STROKE_WIDTH,
@@ -348,14 +418,9 @@ function drawTo(x, y) {
     return;
   }
 
-  // Skip if finger hasn't moved enough — reduces micro-jitter
   const dist = Math.hypot(x - lastX, y - lastY);
   if (dist < MIN_MOVE_DISTANCE) return;
 
-  // Draw continuous line from last position to current position.
-  // Positions are already heavily smoothed (10–16 frame rolling average),
-  // so lineTo between smoothed points produces smooth curves.
-  // Stored strokes use bezier curves for even smoother redraw on resize.
   ctx.beginPath();
   ctx.moveTo(lastX, lastY);
   ctx.lineTo(x, y);
@@ -365,7 +430,6 @@ function drawTo(x, y) {
   ctx.lineJoin = "round";
   ctx.stroke();
 
-  // Store normalized point
   if (currentStroke) {
     currentStroke.points.push({ x: x / canvas.width, y: y / canvas.height });
   }
@@ -378,7 +442,6 @@ function stopDrawing() {
   isDrawing = false;
   lastX = null;
   lastY = null;
-  // Commit current stroke to history
   if (currentStroke && currentStroke.points.length > 1) {
     strokes.push(currentStroke);
   }
@@ -406,11 +469,9 @@ eraserBtn.addEventListener("click", () => {
   eraserMode = !eraserMode;
   eraserBtn.classList.toggle("active", eraserMode);
   trackerDot.classList.toggle("erasing", eraserMode);
-  // Deselect color swatches when eraser is active
   if (eraserMode) {
     swatches.forEach((s) => s.classList.remove("active"));
   } else {
-    // Re-select the current color swatch
     swatches.forEach((s) => {
       if (s.dataset.color === currentColor) s.classList.add("active");
     });
@@ -423,7 +484,6 @@ swatches.forEach((swatch) => {
     swatches.forEach((s) => s.classList.remove("active"));
     swatch.classList.add("active");
     currentColor = swatch.dataset.color;
-    // Deactivate eraser when a color is picked
     eraserMode = false;
     eraserBtn.classList.remove("active");
     trackerDot.classList.remove("erasing");
@@ -440,7 +500,7 @@ clearBtn.addEventListener("click", () => {
 // ─── Camera Toggle ──────────────────────────
 cameraToggleBtn.addEventListener("click", () => {
   cameraOn = !cameraOn;
-  video.style.opacity = cameraOn ? "1" : "0";
+  cameraPip.classList.toggle("hidden", !cameraOn);
   cameraToggleBtn.classList.toggle("active", !cameraOn);
 });
 

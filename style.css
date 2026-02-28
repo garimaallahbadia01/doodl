@@ -1,5 +1,5 @@
 /* ============================================
-   AIR CANVAS — Styles
+   AIR CANVAS — Styles (Clean Canvas Layout)
    ============================================ */
 
 /* --- Reset & Base --- */
@@ -12,21 +12,22 @@
 }
 
 :root {
-  --color-bg: #0f0f14;
-  --color-surface: rgba(20, 20, 30, 0.75);
-  --color-surface-hover: rgba(30, 30, 45, 0.85);
-  --color-text: #e4e4e7;
-  --color-text-muted: rgba(228, 228, 231, 0.5);
+  --color-bg: #f5f5f7;
+  --color-surface: #ffffff;
+  --color-surface-dark: #1a1a2e;
+  --color-text: #1a1a2e;
+  --color-text-muted: rgba(26, 26, 46, 0.45);
   --color-accent: #818cf8;
   --color-accent-glow: rgba(129, 140, 248, 0.3);
-  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border: rgba(0, 0, 0, 0.08);
+  --color-border-dark: rgba(255, 255, 255, 0.1);
   --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 22px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
   --radius-pill: 100px;
-  --blur: 20px;
   --transition-fast: 0.15s ease;
   --transition-med: 0.3s ease;
+  --header-height: 56px;
 }
 
 html,
@@ -41,43 +42,176 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* --- Webcam Feed --- */
+/* --- Hidden webcam element (used by MediaPipe, not displayed full-screen) --- */
 #webcam {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  object-fit: cover;
-  transform: scaleX(-1);
-  /* Mirror for selfie view */
-  z-index: 0;
+  top: -9999px;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
-/* --- Drawing Canvas --- */
+/* --- App Layout --- */
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* --- Header / Toolbar --- */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--header-height);
+  padding: 0 20px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  z-index: 50;
+  flex-shrink: 0;
+}
+
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.app-logo h1 {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-colors {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
+  outline: none;
+  position: relative;
+}
+
+.color-swatch::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  transition: border-color var(--transition-fast);
+}
+
+.color-swatch:hover {
+  transform: scale(1.15);
+}
+
+.color-swatch.active::after {
+  border-color: var(--color-accent);
+}
+
+/* Black swatch needs a subtle border to be visible on white BG */
+.color-swatch[data-color="#111111"] {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--color-border);
+  margin: 0 4px;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+  outline: none;
+}
+
+.toolbar-btn:hover {
+  background: var(--color-bg);
+  color: var(--color-text);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.toolbar-btn:active {
+  transform: scale(0.97);
+}
+
+.toolbar-btn.active {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+}
+
+/* --- Main Canvas Area --- */
+.canvas-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: var(--color-surface);
+  margin: 16px;
+  margin-top: 12px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
 #drawingCanvas {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 1;
-  pointer-events: none;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
 }
 
 /* --- Fingertip Tracker Dot --- */
 .tracker-dot {
-  position: fixed;
-  width: 16px;
-  height: 16px;
+  position: absolute;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: var(--color-accent);
-  box-shadow: 0 0 12px var(--color-accent-glow), 0 0 24px var(--color-accent-glow);
+  box-shadow: 0 0 10px var(--color-accent-glow), 0 0 20px var(--color-accent-glow);
   transform: translate(-50%, -50%);
-  z-index: 2;
+  z-index: 10;
   pointer-events: none;
   opacity: 0;
-  transition: opacity var(--transition-fast), box-shadow var(--transition-fast);
+  transition: left 20ms ease-out, top 20ms ease-out, opacity var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .tracker-dot.visible {
@@ -86,22 +220,89 @@ body {
 
 .tracker-dot.drawing {
   background: #f472b6;
-  box-shadow: 0 0 16px rgba(244, 114, 182, 0.5), 0 0 32px rgba(244, 114, 182, 0.25);
-  width: 12px;
-  height: 12px;
+  box-shadow: 0 0 12px rgba(244, 114, 182, 0.5), 0 0 24px rgba(244, 114, 182, 0.25);
+  width: 10px;
+  height: 10px;
 }
 
 .tracker-dot.erasing {
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
-  width: 24px;
-  height: 24px;
-  border: 2px solid rgba(255, 255, 255, 0.5);
+  background: rgba(100, 100, 100, 0.8);
+  box-shadow: 0 0 8px rgba(100, 100, 100, 0.3);
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba(100, 100, 100, 0.4);
+}
+
+/* --- Camera PIP Window --- */
+.camera-pip {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 220px;
+  height: 165px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.08);
+  z-index: 60;
+  transition: opacity var(--transition-med), transform var(--transition-med);
+}
+
+.camera-pip video,
+.camera-pip #webcamPip {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.pip-label {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.05em;
+  z-index: 2;
+}
+
+.pip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: pipPulse 1.5s ease infinite;
+}
+
+@keyframes pipPulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.camera-pip.hidden {
+  opacity: 0;
+  transform: scale(0.8) translateY(20px);
+  pointer-events: none;
 }
 
 /* --- Onboarding Hint --- */
 .onboarding-hint {
-  position: fixed;
+  position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -110,14 +311,11 @@ body {
   align-items: center;
   gap: 10px;
   padding: 14px 28px;
-  background: var(--color-surface);
-  backdrop-filter: blur(var(--blur));
-  -webkit-backdrop-filter: blur(var(--blur));
-  border: 1px solid var(--color-border);
+  background: var(--color-surface-dark);
   border-radius: var(--radius-pill);
   font-size: 15px;
   font-weight: 500;
-  color: var(--color-text);
+  color: #e4e4e7;
   opacity: 0;
   animation: hintFadeInOut 5s ease forwards;
   pointer-events: none;
@@ -179,6 +377,7 @@ body {
   font-size: 20px;
   font-weight: 600;
   letter-spacing: -0.02em;
+  color: var(--color-text);
 }
 
 .loading-card p {
@@ -263,178 +462,6 @@ body {
   transform: translateY(0);
 }
 
-/* --- Floating Toolbar --- */
-.toolbar {
-  position: fixed;
-  bottom: 28px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 18px;
-  background: var(--color-surface);
-  backdrop-filter: blur(var(--blur));
-  -webkit-backdrop-filter: blur(var(--blur));
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  opacity: 0;
-  animation: toolbarSlideIn 0.6s ease 0.5s forwards;
-}
-
-@keyframes toolbarSlideIn {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
-.toolbar-colors {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.color-swatch {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
-  outline: none;
-  position: relative;
-}
-
-.color-swatch::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  transition: border-color var(--transition-fast);
-}
-
-.color-swatch:hover {
-  transform: scale(1.12);
-}
-
-.color-swatch.active::after {
-  border-color: var(--color-accent);
-}
-
-/* White swatch needs a subtle border to be visible on dark BG */
-.color-swatch[data-color="#ffffff"] {
-  border-color: rgba(255, 255, 255, 0.15);
-}
-
-.toolbar-divider {
-  width: 1px;
-  height: 22px;
-  background: var(--color-border);
-  margin: 0 4px;
-}
-
-.btn-clear {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--color-text);
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
-  cursor: pointer;
-  transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
-  outline: none;
-}
-
-.btn-clear:hover {
-  background: var(--color-surface-hover);
-  border-color: rgba(255, 255, 255, 0.15);
-  transform: scale(1.03);
-}
-
-.btn-clear:active {
-  transform: scale(0.97);
-}
-
-.btn-eraser {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--color-text);
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
-  cursor: pointer;
-  transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
-  outline: none;
-}
-
-.btn-eraser:hover {
-  background: var(--color-surface-hover);
-  border-color: rgba(255, 255, 255, 0.15);
-  transform: scale(1.03);
-}
-
-.btn-eraser:active {
-  transform: scale(0.97);
-}
-
-.btn-eraser.active {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-}
-
-.btn-cam {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--color-text);
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
-  cursor: pointer;
-  transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
-  outline: none;
-}
-
-.btn-cam:hover {
-  background: var(--color-surface-hover);
-  border-color: rgba(255, 255, 255, 0.15);
-  transform: scale(1.03);
-}
-
-.btn-cam:active {
-  transform: scale(0.97);
-}
-
-.btn-cam.active {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: #ef4444;
-  color: #ef4444;
-}
-
 /* --- Privacy Note --- */
 .privacy-note {
   position: fixed;
@@ -456,20 +483,35 @@ body {
 }
 
 /* --- Responsive --- */
-@media (max-width: 600px) {
-  .toolbar {
-    bottom: 16px;
-    padding: 8px 14px;
-    gap: 8px;
+@media (max-width: 700px) {
+  .app-header {
+    padding: 0 12px;
+    height: 48px;
+  }
+
+  .app-logo h1 {
+    display: none;
+  }
+
+  .toolbar-btn span {
+    display: none;
   }
 
   .color-swatch {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
   }
 
-  .btn-clear span {
-    display: none;
+  .canvas-area {
+    margin: 8px;
+    margin-top: 8px;
+  }
+
+  .camera-pip {
+    width: 140px;
+    height: 105px;
+    bottom: 16px;
+    right: 16px;
   }
 
   .privacy-note {
