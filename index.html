@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Air Canvas — draw in the air using hand tracking. No install required.">
+    <title>Air Canvas</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+    <style>
+        /* ── Reset & Base ── */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: radial-gradient(ellipse at center, #12121a 0%, #0a0a0f 100%);
+            min-height: 100vh;
+            font-family: system-ui, -apple-system, 'SF Pro Display', sans-serif;
+            font-weight: 300;
+            letter-spacing: 0.08em;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* ── Container ── */
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* ── Panel A: Drawing Canvas ── */
+        #drawingPanel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #fafaf8;
+            z-index: 1;
+            /* Main stage background */
+        }
+
+        #drawingCanvas {
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        /* ── Panel B: Camera PIP ── */
+        #pipPanel {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 220px;
+            height: 165px;
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow:
+                inset 0 0 0 1px rgba(255, 255, 255, 0.15),
+                0 8px 32px rgba(0, 0, 0, 0.4);
+            z-index: 100;
+        }
+
+        #webcam {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #skeletonCanvas {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* ── Floating Finger Cursor ── */
+        .finger-cursor {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: rgba(50, 50, 50, 0.85);
+            box-shadow: 0 0 8px 3px rgba(100, 120, 255, 0.4);
+            position: fixed;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            transition: left 0.05s linear, top 0.05s linear;
+            z-index: 1000;
+        }
+
+        /* ── Panel C: Toolbar ── */
+        #toolbar {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 100px;
+            /* Pill shape */
+            padding: 10px 18px;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.25),
+                inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        /* ── Color Swatches ── */
+        .swatch {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            box-shadow:
+                inset -2px -2px 4px rgba(0, 0, 0, 0.25),
+                inset 1px 1px 3px rgba(255, 255, 255, 0.4);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .swatch:hover {
+            transform: scale(1.15);
+        }
+
+        .swatch.active {
+            box-shadow:
+                inset -2px -2px 4px rgba(0, 0, 0, 0.25),
+                inset 1px 1px 3px rgba(255, 255, 255, 0.4),
+                0 0 0 2px white;
+        }
+
+        .swatch[data-color="#000000"] {
+            background: #000;
+        }
+
+        .swatch[data-color="#FFFFFF"] {
+            background: #fff;
+        }
+
+        .swatch[data-color="#FF3B30"] {
+            background: #FF3B30;
+        }
+
+        .swatch[data-color="#007AFF"] {
+            background: #007AFF;
+        }
+
+        .swatch[data-color="#34C759"] {
+            background: #34C759;
+        }
+
+        .swatch[data-color="#FFCC00"] {
+            background: #FFCC00;
+        }
+
+        /* ── Buttons ── */
+        .tb-btn {
+            padding: 7px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+            color: #ddd;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+            user-select: none;
+        }
+
+        .tb-btn:hover {
+            background: rgba(255, 255, 255, 0.18);
+            color: #fff;
+        }
+
+        .tb-btn.active {
+            background: rgba(255, 80, 80, 0.35);
+            color: #ff9090;
+            border-color: rgba(255, 80, 80, 0.4);
+        }
+
+        /* ── Divider ── */
+        .divider {
+            width: 1px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* ── Status Indicator ── */
+        #status {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 4;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(30, 30, 30, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            padding: 8px 18px;
+            font-size: 13px;
+            color: #aaa;
+            backdrop-filter: blur(6px);
+            transition: opacity 0.3s;
+        }
+
+        #statusDot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #666;
+            transition: background 0.25s;
+        }
+
+        #statusDot.detected {
+            background: #34C759;
+        }
+
+        #statusDot.loading {
+            background: #FFCC00;
+        }
+
+        /* ── Loading Overlay ── */
+        #loadingOverlay {
+            position: absolute;
+            inset: 0;
+            z-index: 100;
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            color: #ccc;
+            font-size: 15px;
+            transition: opacity 0.5s;
+        }
+
+        #loadingOverlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ══════════════════════════════════════════════════
+           V3 — Gesture Layer Styles
+           ══════════════════════════════════════════════════ */
+
+        /* ── Cursor Mode Variants ── */
+        .finger-cursor.drawing {
+            background: rgba(50, 50, 50, 0.9);
+            box-shadow: 0 0 10px 4px rgba(100, 120, 255, 0.5);
+            animation: cursorPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes cursorPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 8px 3px rgba(100, 120, 255, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 14px 6px rgba(100, 120, 255, 0.6);
+            }
+        }
+
+        .finger-cursor.erasing {
+            width: 16px;
+            height: 16px;
+            background: rgba(255, 140, 0, 0.9);
+            box-shadow: 0 0 12px 5px rgba(255, 140, 0, 0.5);
+        }
+
+        .finger-cursor.picking {
+            width: 10px;
+            height: 10px;
+            border-radius: 0;
+            background: transparent;
+            box-shadow: none;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            transform: translate(-50%, -50%) rotate(45deg);
+        }
+
+        .finger-cursor.fist-hold {
+            background: rgba(255, 50, 50, 0.9);
+            box-shadow: 0 0 14px 6px rgba(255, 50, 50, 0.5);
+            transition: width 0.3s, height 0.3s, background 0.2s;
+        }
+
+        /* ── Mode Badge ── */
+        #modeBadge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            color: #fff;
+            backdrop-filter: blur(24px) saturate(160%);
+            -webkit-backdrop-filter: blur(24px) saturate(160%);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            opacity: 0;
+            transform: translateY(-8px);
+            transition: opacity 0.35s ease, transform 0.35s ease;
+            pointer-events: none;
+        }
+
+        #modeBadge.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #modeBadge.erase-badge {
+            background: rgba(255, 140, 0, 0.35);
+        }
+
+        #modeBadge.picker-badge {
+            background: rgba(170, 68, 255, 0.35);
+        }
+
+        #modeBadge.clear-badge {
+            background: rgba(255, 50, 50, 0.35);
+        }
+
+        /* ── Color Picker Wheel ── */
+        #colorPicker {
+            position: fixed;
+            z-index: 200;
+            width: 200px;
+            height: 200px;
+            pointer-events: none;
+            opacity: 0;
+            transform: scale(0.6);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        #colorPicker.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .picker-swatch {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            box-shadow:
+                inset -2px -2px 4px rgba(0, 0, 0, 0.3),
+                inset 1px 1px 3px rgba(255, 255, 255, 0.4),
+                0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .picker-swatch.highlighted {
+            transform: translate(-50%, -50%) scale(1.35);
+            box-shadow:
+                inset -2px -2px 4px rgba(0, 0, 0, 0.3),
+                inset 1px 1px 3px rgba(255, 255, 255, 0.4),
+                0 0 0 3px white,
+                0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        /* ── Fist Progress Ring ── */
+        #fistProgress {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1001;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+
+        #fistProgress.visible {
+            opacity: 1;
+        }
+
+        /* ── PIP Drag ── */
+        #pipPanel {
+            cursor: grab;
+        }
+
+        #pipPanel.dragging {
+            cursor: grabbing;
+        }
+
+        /* ── Canvas Clear Flash ── */
+        #clearFlash {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        #clearFlash.flash {
+            opacity: 0.6;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="container">
+        <!-- Panel A: Drawing Canvas (Main Stage) -->
+        <div id="drawingPanel">
+            <canvas id="drawingCanvas"></canvas>
+        </div>
+
+        <!-- Panel B: Camera PIP (Bottom Right) -->
+        <div id="pipPanel">
+            <video id="webcam" autoplay playsinline></video>
+            <canvas id="skeletonCanvas"></canvas>
+        </div>
+
+        <!-- Layer: Finger Cursor -->
+        <div id="fingerCursor" class="finger-cursor"></div>
+
+        <!-- V3: Mode Badge -->
+        <div id="modeBadge"></div>
+
+        <!-- V3: Color Picker Wheel -->
+        <div id="colorPicker"></div>
+
+        <!-- V3: Fist Progress Ring -->
+        <canvas id="fistProgress" width="48" height="48"></canvas>
+
+        <!-- V3: Clear Flash -->
+        <div id="clearFlash"></div>
+
+        <!-- Status -->
+        <div id="status">
+            <span id="statusDot" class="loading"></span>
+            <span id="statusText">Initializing…</span>
+        </div>
+
+        <!-- Toolbar -->
+        <div id="toolbar">
+            <div class="swatch active" data-color="#000000" title="Black"></div>
+            <div class="swatch" data-color="#FFFFFF" title="White"></div>
+            <div class="swatch" data-color="#FF3B30" title="Red"></div>
+            <div class="swatch" data-color="#007AFF" title="Blue"></div>
+            <div class="swatch" data-color="#34C759" title="Green"></div>
+            <div class="swatch" data-color="#FFCC00" title="Yellow"></div>
+            <div class="divider"></div>
+            <button class="tb-btn" id="eraserBtn">Eraser</button>
+            <button class="tb-btn" id="clearBtn">Clear</button>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay">
+            <div class="spinner"></div>
+            <span>Loading hand tracking model…</span>
+        </div>
+    </div>
+
+    <script type="module">
+        /* ═══════════════════════════════════════════════════
+           AIR CANVAS — V3 Gesture Layer
+           Single-file implementation. No frameworks.
+           ═══════════════════════════════════════════════════ */
+
+        import { FilesetResolver, HandLandmarker, DrawingUtils } from
+            'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs';
+
+        // ── V1/V2 Constants ──────────────────────────────
+        const PINCH_START_THRESHOLD = 0.16;
+        const PINCH_END_THRESHOLD = 0.22;
+        const MIN_MOVE_THRESHOLD = 8;
+        const SMOOTHING_BUFFER_SIZE = 8;
+        const DOT_HOLD_TIME = 200;
+        const STROKE_WIDTH = 3;
+
+        // ── V3 Constants ─────────────────────────────────
+        const EXTENSION_RATIO = 1.2;
+        const FAST_MOVEMENT_THRESHOLD = 600;
+        const PALM_HISTORY_SIZE = 6;
+        const PALM_STABILITY_THRESHOLD = 30;
+        const PALM_HOLD_TIME = 500;
+        const FIST_HOLD_TIME = 1000;
+        const ERASER_WIDTH = 32;
+        const COLOR_PICKER_RADIUS = 80;
+        const SWATCH_HIT_RADIUS = 40;
+        const PICKER_COLORS = [
+            '#000000', '#FFFFFF', '#FF3B30', '#FF9500',
+            '#FFCC00', '#34C759', '#007AFF', '#AF52DE'
+        ];
+
+        // ── Cursor Smoothing Constants ────────────────────
+        const CURSOR_SMOOTHING_BUFFER_SIZE = 15;  // heavier smoothing than drawing (8)
+        const CURSOR_DEAD_ZONE = 4;               // px — ignore movements smaller than this
+
+        // ── DOM References ───────────────────────────────
+        const video = document.getElementById('webcam');
+        const skeletonCanvas = document.getElementById('skeletonCanvas');
+        const drawingCanvas = document.getElementById('drawingCanvas');
+        const fingerCursor = document.getElementById('fingerCursor');
+        const modeBadge = document.getElementById('modeBadge');
+        const colorPickerEl = document.getElementById('colorPicker');
+        const fistProgressEl = document.getElementById('fistProgress');
+        const clearFlashEl = document.getElementById('clearFlash');
+        const pipPanel = document.getElementById('pipPanel');
+        const skeletonCtx = skeletonCanvas.getContext('2d');
+        const drawingCtx = drawingCanvas.getContext('2d');
+        const fistCtx = fistProgressEl.getContext('2d');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const eraserBtn = document.getElementById('eraserBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        // ── Core State ───────────────────────────────────
+        let handLandmarker = null;
+        let drawingUtils = null;
+        let currentColor = '#000000';
+        let currentMode = 'DRAW';  // 'DRAW' | 'ERASE'
+
+        // Drawing hand state
+        let handState = {
+            posBuffer: [],
+            prevX: null,
+            prevY: null,
+            holdStart: null,
+            dotDrawn: false
+        };
+
+        function resetHandState() {
+            handState.posBuffer = [];
+            handState.prevX = null;
+            handState.prevY = null;
+            handState.holdStart = null;
+            handState.dotDrawn = false;
+        }
+
+        // ── Gesture State ────────────────────────────────
+        let lastPalmCenter = null;
+        let lastFrameTime = 0;
+        let handVelocity = { x: 0, y: 0 };
+        let palmHistory = [];
+        let palmHoldStart = 0;
+        let fistHoldStart = 0;
+        let isColorPickerOpen = false;
+        let pickerAnchor = { x: 0, y: 0 };
+        let highlightedSwatchIdx = -1;
+        let isPinching = false;
+        let modeBadgeTimer = null;
+        let wasPointing = false;
+
+        // Cursor-specific state (separate from drawing pipeline)
+        let cursorBuffer = [];
+        let displayedCursorX = 0;
+        let displayedCursorY = 0;
+
+        // ── Canvas Sizing ────────────────────────────────
+        function resizeCanvases() {
+            skeletonCanvas.width = 220;
+            skeletonCanvas.height = 165;
+
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            if (drawingCanvas.width !== w || drawingCanvas.height !== h) {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = drawingCanvas.width;
+                tempCanvas.height = drawingCanvas.height;
+                tempCanvas.getContext('2d').drawImage(drawingCanvas, 0, 0);
+                drawingCanvas.width = w;
+                drawingCanvas.height = h;
+                drawingCtx.drawImage(tempCanvas, 0, 0);
+            }
+        }
+        window.addEventListener('resize', resizeCanvases);
+
+        // ── Smoothing ────────────────────────────────────
+        function getSmoothedPosition(buffer, rawX, rawY) {
+            buffer.push({ x: rawX, y: rawY });
+            if (buffer.length > SMOOTHING_BUFFER_SIZE) buffer.shift();
+
+            let totalWeight = 0, smoothX = 0, smoothY = 0;
+            buffer.forEach((pos, i) => {
+                const weight = i + 1;
+                smoothX += pos.x * weight;
+                smoothY += pos.y * weight;
+                totalWeight += weight;
+            });
+            return { x: smoothX / totalWeight, y: smoothY / totalWeight };
+        }
+
+        // ═══════════════════════════════════════════════════
+        //   COORDINATE CONVERSION — V3 centralized
+        // ═══════════════════════════════════════════════════
+        function convertLandmarks(results) {
+            if (!results.landmarks || results.landmarks.length === 0) return null;
+            return results.landmarks.map(hand =>
+                hand.map(lm => ({
+                    x: (1 - lm.x) * window.innerWidth,
+                    y: lm.y * window.innerHeight
+                }))
+            );
+        }
+
+        // ═══════════════════════════════════════════════════
+        //   GESTURE DETECTION — V3
+        // ═══════════════════════════════════════════════════
+        function isFingerExtended(landmarks, tipIdx, pipIdx) {
+            const wrist = landmarks[0];
+            const tip = landmarks[tipIdx];
+            const pip = landmarks[pipIdx];
+            const distTip = Math.hypot(tip.x - wrist.x, tip.y - wrist.y);
+            const distPip = Math.hypot(pip.x - wrist.x, pip.y - wrist.y);
+            return distTip > distPip * EXTENSION_RATIO;
+        }
+
+        function isThumbExtended(landmarks) {
+            const thumbTip = landmarks[4];
+            const thumbIp = landmarks[3];
+            const indexMcp = landmarks[5];
+            const distFromIndex = Math.hypot(thumbTip.x - indexMcp.x, thumbTip.y - indexMcp.y);
+            const thumbLength = Math.hypot(thumbTip.x - thumbIp.x, thumbTip.y - thumbIp.y);
+            return distFromIndex > thumbLength * 1.5;
+        }
+
+        function getHandPose(landmarks) {
+            const ext = {
+                thumb: isThumbExtended(landmarks),
+                index: isFingerExtended(landmarks, 8, 6),
+                middle: isFingerExtended(landmarks, 12, 10),
+                ring: isFingerExtended(landmarks, 16, 14),
+                pinky: isFingerExtended(landmarks, 20, 18)
+            };
+
+            if (!ext.thumb && ext.index && !ext.middle && !ext.ring && !ext.pinky)
+                return 'POINT';
+            if (!ext.thumb && ext.index && ext.middle && !ext.ring && !ext.pinky)
+                return 'TWO_FINGERS';
+            if (ext.thumb && ext.index && ext.middle && ext.ring && ext.pinky)
+                return 'OPEN_PALM';
+            if (!ext.thumb && !ext.index && !ext.middle && !ext.ring && !ext.pinky)
+                return 'FIST';
+            return 'NEUTRAL';
+        }
+
+        // ── Velocity Tracking ────────────────────────────
+        function getPalmCenter(landmarks) {
+            const w = landmarks[0], i = landmarks[5], p = landmarks[17];
+            return { x: (w.x + i.x + p.x) / 3, y: (w.y + i.y + p.y) / 3 };
+        }
+
+        function updateVelocity(landmarks) {
+            const now = performance.now();
+            const dt = (now - lastFrameTime) / 1000;
+            lastFrameTime = now;
+
+            const center = getPalmCenter(landmarks);
+            if (lastPalmCenter && dt > 0) {
+                handVelocity = {
+                    x: (center.x - lastPalmCenter.x) / dt,
+                    y: (center.y - lastPalmCenter.y) / dt
+                };
+            }
+            lastPalmCenter = center;
+        }
+
+        function isHandMovingFast() {
+            return Math.hypot(handVelocity.x, handVelocity.y) > FAST_MOVEMENT_THRESHOLD;
+        }
+
+        // ── Palm Stability ───────────────────────────────
+        function isPalmStable(landmarks) {
+            const center = getPalmCenter(landmarks);
+            palmHistory.push(center);
+            if (palmHistory.length > PALM_HISTORY_SIZE) palmHistory.shift();
+            if (palmHistory.length < 3) return false;
+
+            const first = palmHistory[0];
+            return palmHistory.every(p =>
+                Math.hypot(p.x - first.x, p.y - first.y) < PALM_STABILITY_THRESHOLD
+            );
+        }
+
+        // ── Pinch Detection (for color picker) ──────────
+        function detectPinch(landmarks) {
+            const thumbTip = landmarks[4];
+            const indexTip = landmarks[8];
+            const wrist = landmarks[0];
+            const middleMCP = landmarks[9];
+
+            const handSize = Math.hypot(middleMCP.x - wrist.x, middleMCP.y - wrist.y);
+            if (handSize === 0) return;
+
+            const pinchDist = Math.hypot(indexTip.x - thumbTip.x, indexTip.y - thumbTip.y);
+            const normalizedPinch = pinchDist / handSize;
+
+            if (!isPinching && normalizedPinch < PINCH_START_THRESHOLD) {
+                isPinching = true;
+            } else if (isPinching && normalizedPinch > PINCH_END_THRESHOLD) {
+                isPinching = false;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════
+        //   DRAWING — preserved from V1/V2
+        // ═══════════════════════════════════════════════════
+        function drawStroke(currX, currY) {
+            if (handState.prevX === null) {
+                handState.prevX = currX;
+                handState.prevY = currY;
+                handState.holdStart = performance.now();
+                return;
+            }
+
+            const dx = currX - handState.prevX;
+            const dy = currY - handState.prevY;
+            const dist = Math.hypot(dx, dy);
+
+            if (dist < MIN_MOVE_THRESHOLD) {
+                if (!handState.dotDrawn && handState.holdStart !== null) {
+                    if (performance.now() - handState.holdStart > DOT_HOLD_TIME) {
+                        drawingCtx.save();
+                        if (currentMode === 'ERASE') {
+                            drawingCtx.globalCompositeOperation = 'destination-out';
+                        }
+                        drawingCtx.beginPath();
+                        drawingCtx.arc(currX, currY, (currentMode === 'ERASE' ? ERASER_WIDTH : STROKE_WIDTH) / 2, 0, Math.PI * 2);
+                        drawingCtx.fillStyle = currentMode === 'ERASE' ? '#000' : currentColor;
+                        drawingCtx.fill();
+                        drawingCtx.restore();
+                        drawingCtx.globalCompositeOperation = 'source-over';
+                        handState.dotDrawn = true;
+                    }
+                }
+                return;
+            }
+
+            drawingCtx.save();
+            if (currentMode === 'ERASE') {
+                drawingCtx.globalCompositeOperation = 'destination-out';
+                drawingCtx.strokeStyle = '#000';
+                drawingCtx.lineWidth = ERASER_WIDTH;
+            } else {
+                drawingCtx.globalCompositeOperation = 'source-over';
+                drawingCtx.strokeStyle = currentColor;
+                drawingCtx.lineWidth = STROKE_WIDTH;
+            }
+            drawingCtx.lineCap = 'round';
+            drawingCtx.lineJoin = 'round';
+
+            const midX = (handState.prevX + currX) / 2;
+            const midY = (handState.prevY + currY) / 2;
+
+            drawingCtx.beginPath();
+            drawingCtx.moveTo(handState.prevX, handState.prevY);
+            drawingCtx.quadraticCurveTo(handState.prevX, handState.prevY, midX, midY);
+            drawingCtx.lineTo(currX, currY);
+            drawingCtx.stroke();
+            drawingCtx.restore();
+            drawingCtx.globalCompositeOperation = 'source-over';
+
+            handState.prevX = currX;
+            handState.prevY = currY;
+            handState.holdStart = performance.now();
+            handState.dotDrawn = false;
+        }
+
+        function endStroke() {
+            handState.prevX = null;
+            handState.prevY = null;
+            handState.holdStart = null;
+            handState.dotDrawn = false;
+        }
+
+        // ═══════════════════════════════════════════════════
+        //   COLOR PICKER — V3
+        // ═══════════════════════════════════════════════════
+        function buildPickerSwatches() {
+            colorPickerEl.innerHTML = '';
+            PICKER_COLORS.forEach((color, i) => {
+                const angle = (i / PICKER_COLORS.length) * Math.PI * 2 - Math.PI / 2;
+                const sx = Math.cos(angle) * COLOR_PICKER_RADIUS;
+                const sy = Math.sin(angle) * COLOR_PICKER_RADIUS;
+                const swatch = document.createElement('div');
+                swatch.className = 'picker-swatch';
+                swatch.dataset.color = color;
+                swatch.style.background = color;
+                swatch.style.transform = `translate(calc(-50% + ${sx}px), calc(-50% + ${sy}px))`;
+                colorPickerEl.appendChild(swatch);
+            });
+        }
+        buildPickerSwatches();
+
+        function openColorPicker(x, y) {
+            isColorPickerOpen = true;
+            pickerAnchor = { x, y };
+            colorPickerEl.style.left = `${x - 100}px`;
+            colorPickerEl.style.top = `${y - 100}px`;
+            colorPickerEl.classList.add('visible');
+        }
+
+        function closeColorPicker() {
+            isColorPickerOpen = false;
+            highlightedSwatchIdx = -1;
+            colorPickerEl.classList.remove('visible');
+            document.querySelectorAll('.picker-swatch').forEach(s => s.classList.remove('highlighted'));
+        }
+
+        function updatePickerHighlight(fingerX, fingerY) {
+            const swatches = document.querySelectorAll('.picker-swatch');
+            let minDist = Infinity;
+            let nearest = -1;
+
+            swatches.forEach((swatch, i) => {
+                swatch.classList.remove('highlighted');
+                const angle = (i / PICKER_COLORS.length) * Math.PI * 2 - Math.PI / 2;
+                const sx = pickerAnchor.x + Math.cos(angle) * COLOR_PICKER_RADIUS;
+                const sy = pickerAnchor.y + Math.sin(angle) * COLOR_PICKER_RADIUS;
+                const d = Math.hypot(fingerX - sx, fingerY - sy);
+                if (d < minDist) {
+                    minDist = d;
+                    nearest = i;
+                }
+            });
+
+            if (minDist < SWATCH_HIT_RADIUS && nearest >= 0) {
+                swatches[nearest].classList.add('highlighted');
+                highlightedSwatchIdx = nearest;
+            } else {
+                highlightedSwatchIdx = -1;
+            }
+        }
+
+        function selectPickerColor() {
+            if (highlightedSwatchIdx >= 0) {
+                currentColor = PICKER_COLORS[highlightedSwatchIdx];
+                currentMode = 'DRAW';
+                // Sync toolbar
+                document.querySelectorAll('.swatch').forEach(s => {
+                    s.classList.toggle('active', s.dataset.color === currentColor);
+                });
+                eraserBtn.classList.remove('active');
+                showModeBadge(`✓ ${currentColor}`, 'picker-badge');
+            }
+            closeColorPicker();
+        }
+
+        // ═══════════════════════════════════════════════════
+        //   VISUAL FEEDBACK — V3
+        // ═══════════════════════════════════════════════════
+        function showModeBadge(text, badgeClass) {
+            modeBadge.textContent = text;
+            modeBadge.className = badgeClass;
+            modeBadge.classList.add('visible');
+            if (modeBadgeTimer) clearTimeout(modeBadgeTimer);
+            modeBadgeTimer = setTimeout(() => {
+                modeBadge.classList.remove('visible');
+            }, 2000);
+        }
+
+        function updateCursor(fingerPos, pose) {
+            // Apply cursor-specific smoothing (15-frame buffer)
+            cursorBuffer.push({ x: fingerPos.x, y: fingerPos.y });
+            if (cursorBuffer.length > CURSOR_SMOOTHING_BUFFER_SIZE) cursorBuffer.shift();
+            let totalWeight = 0, csX = 0, csY = 0;
+            cursorBuffer.forEach((pos, i) => {
+                const w = i + 1;
+                csX += pos.x * w;
+                csY += pos.y * w;
+                totalWeight += w;
+            });
+            const smoothX = csX / totalWeight;
+            const smoothY = csY / totalWeight;
+
+            // Dead zone: only move cursor if it moved more than threshold
+            if (Math.hypot(smoothX - displayedCursorX, smoothY - displayedCursorY) > CURSOR_DEAD_ZONE) {
+                displayedCursorX = smoothX;
+                displayedCursorY = smoothY;
+            }
+
+            fingerCursor.style.left = `${displayedCursorX}px`;
+            fingerCursor.style.top = `${displayedCursorY}px`;
+
+            // Reset all mode classes
+            fingerCursor.classList.remove('drawing', 'erasing', 'picking', 'fist-hold', 'pinching');
+            fingerCursor.style.width = '';
+            fingerCursor.style.height = '';
+
+            if (pose === 'POINT' && currentMode === 'DRAW') {
+                fingerCursor.classList.add('drawing');
+            } else if (pose === 'POINT' && currentMode === 'ERASE') {
+                fingerCursor.classList.add('erasing');
+            } else if (pose === 'TWO_FINGERS' || isColorPickerOpen) {
+                fingerCursor.classList.add('picking');
+            } else if (pose === 'FIST') {
+                fingerCursor.classList.add('fist-hold');
+                // Scale cursor with hold progress
+                if (fistHoldStart > 0) {
+                    const progress = Math.min((performance.now() - fistHoldStart) / FIST_HOLD_TIME, 1);
+                    const size = 12 + progress * 20;
+                    fingerCursor.style.width = `${size}px`;
+                    fingerCursor.style.height = `${size}px`;
+                }
+            }
+        }
+
+        function updateFistProgress(fingerPos) {
+            if (fistHoldStart <= 0) {
+                fistProgressEl.classList.remove('visible');
+                return;
+            }
+            const progress = Math.min((performance.now() - fistHoldStart) / FIST_HOLD_TIME, 1);
+            fistProgressEl.classList.add('visible');
+            fistProgressEl.style.left = `${fingerPos.x - 24}px`;
+            fistProgressEl.style.top = `${fingerPos.y - 24}px`;
+
+            fistCtx.clearRect(0, 0, 48, 48);
+            fistCtx.strokeStyle = `rgba(255, ${Math.round(50 + 200 * (1 - progress))}, 50, 0.9)`;
+            fistCtx.lineWidth = 3;
+            fistCtx.lineCap = 'round';
+            fistCtx.beginPath();
+            fistCtx.arc(24, 24, 20, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
+            fistCtx.stroke();
+        }
+
+        function getSkeletonColor(pose) {
+            if (currentMode === 'ERASE') return '#FF8C00';
+            if (isColorPickerOpen) return '#AA44FF';
+            if (pose === 'FIST') return '#FF3333';
+            return '#00FF00';
+        }
+
+        function clearCanvasWithFlash() {
+            drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+            clearFlashEl.classList.add('flash');
+            setTimeout(() => clearFlashEl.classList.remove('flash'), 300);
+            showModeBadge('🗑 Canvas Cleared', 'clear-badge');
+        }
+
+        // ═══════════════════════════════════════════════════
+        //   GESTURE STATE MACHINE — V3
+        // ═══════════════════════════════════════════════════
+        function updateGestureState(pose, landmarks, fingerPos) {
+            // ── Open Palm → Toggle Eraser ──
+            if (pose === 'OPEN_PALM' && isPalmStable(landmarks)) {
+                if (palmHoldStart === 0) palmHoldStart = performance.now();
+                if (performance.now() - palmHoldStart >= PALM_HOLD_TIME) {
+                    currentMode = currentMode === 'DRAW' ? 'ERASE' : 'DRAW';
+                    eraserBtn.classList.toggle('active', currentMode === 'ERASE');
+                    if (currentMode === 'DRAW') {
+                        // Re-activate toolbar swatch
+                        document.querySelectorAll('.swatch').forEach(s => {
+                            s.classList.toggle('active', s.dataset.color === currentColor);
+                        });
+                    } else {
+                        document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+                    }
+                    showModeBadge(currentMode === 'ERASE' ? '🧹 Eraser Mode' : '✏️ Draw Mode',
+                        currentMode === 'ERASE' ? 'erase-badge' : '');
+                    palmHoldStart = 0;
+                    palmHistory = [];
+                }
+            } else if (pose !== 'OPEN_PALM') {
+                palmHoldStart = 0;
+                palmHistory = [];
+            }
+
+            // ── Fist → Clear Canvas ──
+            if (pose === 'FIST') {
+                if (fistHoldStart === 0) fistHoldStart = performance.now();
+                updateFistProgress(fingerPos);
+                if (performance.now() - fistHoldStart >= FIST_HOLD_TIME) {
+                    clearCanvasWithFlash();
+                    fistHoldStart = 0;
+                }
+            } else {
+                fistHoldStart = 0;
+                fistProgressEl.classList.remove('visible');
+            }
+
+            // ── Two Fingers → Color Picker ──
+            if (pose === 'TWO_FINGERS') {
+                detectPinch(landmarks);
+                if (!isColorPickerOpen) {
+                    openColorPicker(fingerPos.x, fingerPos.y);
+                }
+                updatePickerHighlight(fingerPos.x, fingerPos.y);
+                if (isPinching && highlightedSwatchIdx >= 0) {
+                    selectPickerColor();
+                }
+            } else if (pose !== 'TWO_FINGERS' && isColorPickerOpen) {
+                closeColorPicker();
+            }
+
+            // ── Point → Drawing ──
+            if (pose === 'POINT') {
+                if (!wasPointing) {
+                    // Reset smooth buffer at start of new pointing
+                    handState.posBuffer = [];
+                }
+                wasPointing = true;
+            } else {
+                if (wasPointing) {
+                    endStroke();
+                }
+                wasPointing = false;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════
+        //   PROCESS RESULTS — V3 Pipeline
+        // ═══════════════════════════════════════════════════
+        function processResults(results) {
+            // Clear skeleton every frame
+            skeletonCtx.save();
+            skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
+
+            const converted = convertLandmarks(results);
+
+            if (!converted) {
+                statusDot.classList.remove('detected');
+                statusText.textContent = 'No hand detected';
+                if (wasPointing) { endStroke(); wasPointing = false; }
+                fingerCursor.style.display = 'none';
+                fistProgressEl.classList.remove('visible');
+                lastPalmCenter = null;
+                skeletonCtx.restore();
+                return;
+            }
+
+            fingerCursor.style.display = '';
+            statusDot.classList.add('detected');
+            statusText.textContent = converted.length === 1
+                ? '1 hand detected'
+                : `${converted.length} hands detected`;
+
+            // Use first hand only for gesture control
+            const landmarks = converted[0];
+
+            // Step 2: Velocity
+            updateVelocity(landmarks);
+
+            // Step 3: Pose (suppress during fast movement)
+            const pose = isHandMovingFast() ? 'NEUTRAL' : getHandPose(landmarks);
+
+            // Step 4–5: Smoothed finger position (for drawing — 8-frame buffer)
+            const indexTip = landmarks[8];
+            const smoothedPos = getSmoothedPosition(handState.posBuffer, indexTip.x, indexTip.y);
+
+            // Step 4: Gesture state machine
+            updateGestureState(pose, landmarks, smoothedPos);
+
+            // Step 5: Draw/erase when pointing
+            if (pose === 'POINT') {
+                drawStroke(smoothedPos.x, smoothedPos.y);
+            }
+
+            // Step 6: Skeleton (using raw normalized landmarks for DrawingUtils)
+            const skelColor = getSkeletonColor(pose);
+            for (let i = 0; i < results.landmarks.length; i++) {
+                const rawLandmarks = results.landmarks[i];
+                const mirrored = rawLandmarks.map(lm => ({
+                    x: 1 - lm.x,
+                    y: lm.y,
+                    z: lm.z
+                }));
+                drawingUtils.drawConnectors(mirrored, HandLandmarker.HAND_CONNECTIONS, {
+                    color: skelColor,
+                    lineWidth: 2
+                });
+                drawingUtils.drawLandmarks(mirrored, {
+                    color: '#FF0000',
+                    radius: 4
+                });
+            }
+
+            // Step 7: Cursor
+            updateCursor(smoothedPos, pose);
+
+            skeletonCtx.restore();
+        }
+
+        // ── Detection Loop ───────────────────────────────
+        let lastTimestamp = -1;
+
+        function detectLoop() {
+            if (!handLandmarker || video.readyState < 2) {
+                requestAnimationFrame(detectLoop);
+                return;
+            }
+
+            const nowMs = performance.now();
+            if (nowMs <= lastTimestamp) {
+                requestAnimationFrame(detectLoop);
+                return;
+            }
+            lastTimestamp = nowMs;
+
+            const results = handLandmarker.detectForVideo(video, nowMs);
+            processResults(results);
+            requestAnimationFrame(detectLoop);
+        }
+
+        // ═══════════════════════════════════════════════════
+        //   DRAGGABLE PIP — V3
+        // ═══════════════════════════════════════════════════
+        function setupDraggablePIP(el) {
+            let isDragging = false;
+            let dragStartX, dragStartY, pipStartLeft, pipStartTop;
+
+            el.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                const rect = el.getBoundingClientRect();
+                pipStartLeft = rect.left;
+                pipStartTop = rect.top;
+                el.classList.add('dragging');
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                let newLeft = pipStartLeft + (e.clientX - dragStartX);
+                let newTop = pipStartTop + (e.clientY - dragStartY);
+
+                newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - el.offsetWidth));
+                newTop = Math.max(0, Math.min(newTop, window.innerHeight - el.offsetHeight));
+
+                el.style.left = newLeft + 'px';
+                el.style.top = newTop + 'px';
+                el.style.bottom = 'auto';
+                el.style.right = 'auto';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (!isDragging) return;
+                isDragging = false;
+                el.classList.remove('dragging');
+            });
+
+            el.addEventListener('dblclick', () => {
+                el.style.left = 'auto';
+                el.style.top = 'auto';
+                el.style.right = '24px';
+                el.style.bottom = '24px';
+            });
+        }
+
+        // ═══════════════════════════════════════════════════
+        //   UI EVENT HANDLERS (toolbar fallback)
+        // ═══════════════════════════════════════════════════
+        document.querySelectorAll('.swatch').forEach(swatch => {
+            swatch.addEventListener('click', () => {
+                document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+                swatch.classList.add('active');
+                currentColor = swatch.dataset.color;
+                currentMode = 'DRAW';
+                eraserBtn.classList.remove('active');
+            });
+        });
+
+        eraserBtn.addEventListener('click', () => {
+            currentMode = currentMode === 'ERASE' ? 'DRAW' : 'ERASE';
+            eraserBtn.classList.toggle('active', currentMode === 'ERASE');
+            if (currentMode === 'ERASE') {
+                document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+            } else {
+                document.querySelectorAll('.swatch').forEach(s => {
+                    s.classList.toggle('active', s.dataset.color === currentColor);
+                });
+            }
+        });
+
+        clearBtn.addEventListener('click', () => {
+            clearCanvasWithFlash();
+        });
+
+        // ═══════════════════════════════════════════════════
+        //   INITIALIZATION
+        // ═══════════════════════════════════════════════════
+        async function init() {
+            try {
+                statusText.textContent = 'Requesting camera…';
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
+                });
+                video.srcObject = stream;
+                await video.play();
+
+                resizeCanvases();
+
+                statusText.textContent = 'Loading hand tracking model…';
+                const vision = await FilesetResolver.forVisionTasks(
+                    'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+                );
+
+                handLandmarker = await HandLandmarker.createFromOptions(vision, {
+                    baseOptions: {
+                        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
+                        delegate: 'GPU'
+                    },
+                    runningMode: 'VIDEO',
+                    numHands: 2,
+                    minHandDetectionConfidence: 0.7,
+                    minHandPresenceConfidence: 0.7,
+                    minTrackingConfidence: 0.7
+                });
+
+                drawingUtils = new DrawingUtils(skeletonCtx);
+
+                // Setup draggable PIP
+                setupDraggablePIP(pipPanel);
+
+                loadingOverlay.classList.add('hidden');
+                statusDot.classList.remove('loading');
+                statusText.textContent = 'No hand detected';
+
+                console.log('Air Canvas V3 initialized successfully.');
+                console.log('HAND_CONNECTIONS:', HandLandmarker.HAND_CONNECTIONS);
+                requestAnimationFrame(detectLoop);
+
+            } catch (err) {
+                console.error('Initialization failed:', err);
+                statusText.textContent = 'Error: ' + err.message;
+                statusDot.classList.remove('loading');
+                loadingOverlay.querySelector('span').textContent = 'Failed: ' + err.message;
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
