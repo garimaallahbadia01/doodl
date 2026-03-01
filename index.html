@@ -4,12 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Air Canvas — draw in the air using hand tracking. No install required.">
+    <meta name="description" content="Air Canvas â€” draw in the air using hand tracking. No install required.">
     <title>Air Canvas</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
     <style>
-        /* ── Reset & Base ── */
+        /* â”€â”€ Reset & Base â”€â”€ */
         *,
         *::before,
         *::after {
@@ -31,14 +31,14 @@
             color: rgba(255, 255, 255, 0.7);
         }
 
-        /* ── Container ── */
+        /* â”€â”€ Container â”€â”€ */
         #container {
             position: relative;
             width: 100vw;
             height: 100vh;
         }
 
-        /* ── Panel A: Drawing Canvas ── */
+        /* â”€â”€ Panel A: Drawing Canvas â”€â”€ */
         #drawingPanel {
             position: absolute;
             top: 0;
@@ -56,7 +56,7 @@
             pointer-events: none;
         }
 
-        /* ── Panel B: Camera PIP ── */
+        /* â”€â”€ Panel B: Camera PIP â”€â”€ */
         #pipPanel {
             position: fixed;
             bottom: 24px;
@@ -89,7 +89,7 @@
             left: 0;
         }
 
-        /* ── Floating Finger Cursor ── */
+        /* â”€â”€ Floating Finger Cursor â”€â”€ */
         .finger-cursor {
             width: 14px;
             height: 14px;
@@ -103,7 +103,7 @@
             z-index: 1000;
         }
 
-        /* ── Panel C: Toolbar ── */
+        /* â”€â”€ Panel C: Toolbar â”€â”€ */
         #toolbar {
             position: fixed;
             bottom: 24px;
@@ -126,7 +126,7 @@
                 inset 0 -1px 0 rgba(255, 255, 255, 0.05);
         }
 
-        /* ── Color Swatches ── */
+        /* â”€â”€ Color Swatches â”€â”€ */
         .swatch {
             width: 20px;
             height: 20px;
@@ -174,7 +174,7 @@
             background: #FFCC00;
         }
 
-        /* ── Buttons ── */
+        /* â”€â”€ Buttons â”€â”€ */
         .tb-btn {
             padding: 7px 16px;
             border-radius: 8px;
@@ -198,14 +198,25 @@
             border-color: rgba(255, 80, 80, 0.4);
         }
 
-        /* ── Divider ── */
+        #eraserBtn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #eraserBtn .eraser-icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* â”€â”€ Divider â”€â”€ */
         .divider {
             width: 1px;
             height: 24px;
             background: rgba(255, 255, 255, 0.15);
         }
 
-        /* ── Status Indicator ── */
+        /* â”€â”€ Status Indicator â”€â”€ */
         #status {
             position: absolute;
             top: 16px;
@@ -241,7 +252,7 @@
             background: #FFCC00;
         }
 
-        /* ── Loading Overlay ── */
+        /* â”€â”€ Loading Overlay â”€â”€ */
         #loadingOverlay {
             position: absolute;
             inset: 0;
@@ -277,11 +288,11 @@
             }
         }
 
-        /* ══════════════════════════════════════════════════
-           V3 — Gesture Layer Styles
-           ══════════════════════════════════════════════════ */
+        /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+           V3 â€” Gesture Layer Styles
+           â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-        /* ── Cursor Mode Variants ── */
+        /* â”€â”€ Cursor Mode Variants â”€â”€ */
         .finger-cursor.drawing {
             background: rgba(50, 50, 50, 0.9);
             box-shadow: 0 0 10px 4px rgba(100, 120, 255, 0.5);
@@ -301,10 +312,11 @@
         }
 
         .finger-cursor.erasing {
-            width: 16px;
-            height: 16px;
-            background: rgba(255, 140, 0, 0.9);
-            box-shadow: 0 0 12px 5px rgba(255, 140, 0, 0.5);
+            width: 28px;
+            height: 28px;
+            background: url('Group%2010.svg') center/contain no-repeat;
+            border-radius: 0;
+            box-shadow: none;
         }
 
         .finger-cursor.picking {
@@ -323,88 +335,58 @@
             transition: width 0.3s, height 0.3s, background 0.2s;
         }
 
-        /* ── Mode Badge ── */
+        /* â”€â”€ Mode Badge â”€â”€ */
         #modeBadge {
             position: fixed;
             top: 20px;
-            right: 20px;
+            left: 20px;
             z-index: 100;
             display: flex;
             align-items: center;
             gap: 6px;
-            padding: 8px 16px;
+            padding: 6px 14px;
             border-radius: 100px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 500;
             letter-spacing: 0.04em;
-            color: #fff;
+            color: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(24px) saturate(160%);
             -webkit-backdrop-filter: blur(24px) saturate(160%);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            opacity: 0;
-            transform: translateY(-8px);
-            transition: opacity 0.35s ease, transform 0.35s ease;
+            border: 1px solid rgba(255, 255, 255, 0.12);
             pointer-events: none;
+            transition: background 0.2s ease;
         }
 
-        #modeBadge.visible {
-            opacity: 1;
-            transform: translateY(0);
+        #modeBadge.erase-mode {
+            background: rgba(255, 140, 0, 0.2);
+            border-color: rgba(255, 140, 0, 0.25);
         }
 
-        #modeBadge.erase-badge {
-            background: rgba(255, 140, 0, 0.35);
+        #modeBadge .badge-icon {
+            width: 14px;
+            height: 14px;
         }
 
-        #modeBadge.picker-badge {
-            background: rgba(170, 68, 255, 0.35);
+        @keyframes badgePulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.15);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
 
-        #modeBadge.clear-badge {
-            background: rgba(255, 50, 50, 0.35);
+        #modeBadge.pulse {
+            animation: badgePulse 200ms ease;
         }
 
-        /* ── Color Picker Wheel ── */
-        #colorPicker {
-            position: fixed;
-            z-index: 200;
-            width: 200px;
-            height: 200px;
-            pointer-events: none;
-            opacity: 0;
-            transform: scale(0.6);
-            transition: opacity 0.2s ease, transform 0.2s ease;
-        }
-
-        #colorPicker.visible {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        .picker-swatch {
-            position: absolute;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            top: 50%;
-            left: 50%;
-            box-shadow:
-                inset -2px -2px 4px rgba(0, 0, 0, 0.3),
-                inset 1px 1px 3px rgba(255, 255, 255, 0.4),
-                0 2px 8px rgba(0, 0, 0, 0.3);
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-
-        .picker-swatch.highlighted {
-            transform: translate(-50%, -50%) scale(1.35);
-            box-shadow:
-                inset -2px -2px 4px rgba(0, 0, 0, 0.3),
-                inset 1px 1px 3px rgba(255, 255, 255, 0.4),
-                0 0 0 3px white,
-                0 4px 12px rgba(0, 0, 0, 0.4);
-        }
-
-        /* ── Fist Progress Ring ── */
+        /* â”€â”€ Fist Progress Ring â”€â”€ */
         #fistProgress {
             position: fixed;
             pointer-events: none;
@@ -417,7 +399,7 @@
             opacity: 1;
         }
 
-        /* ── PIP Drag ── */
+        /* â”€â”€ PIP Drag â”€â”€ */
         #pipPanel {
             cursor: grab;
         }
@@ -426,7 +408,7 @@
             cursor: grabbing;
         }
 
-        /* ── Canvas Clear Flash ── */
+        /* â”€â”€ Canvas Clear Flash â”€â”€ */
         #clearFlash {
             position: fixed;
             inset: 0;
@@ -439,6 +421,85 @@
 
         #clearFlash.flash {
             opacity: 0.6;
+        }
+
+        /* ── Undo/Redo Flashes & Status ── */
+        .action-flash {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s ease;
+        }
+
+        .action-flash.undo {
+            background: rgba(150, 150, 150, 0.3);
+        }
+
+        .action-flash.redo {
+            background: rgba(100, 150, 255, 0.3);
+        }
+
+        .action-flash.flash {
+            opacity: 1;
+        }
+
+        #undoRedoStatus {
+            position: fixed;
+            top: 60px;
+            left: 20px;
+            padding: 6px 14px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.65);
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 100;
+        }
+
+        #undoRedoStatus.visible {
+            opacity: 1;
+        }
+
+        /* ── Radial Color Picker ── */
+        #colorPicker {
+            position: fixed;
+            width: 200px;
+            height: 200px;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: opacity 0.2s, transform 0.2s;
+        }
+
+        #colorPicker.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .picker-swatch {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .picker-swatch.highlighted {
+            transform: scale(1.3) !important;
+            /* overrides JS inline transform scale implicitly or we handle it in JS */
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.9), 0 8px 16px rgba(0, 0, 0, 0.5);
+            z-index: 2;
         }
     </style>
 </head>
@@ -460,10 +521,15 @@
         <!-- Layer: Finger Cursor -->
         <div id="fingerCursor" class="finger-cursor"></div>
 
-        <!-- V3: Mode Badge -->
-        <div id="modeBadge"></div>
+        <!-- V3: Mode Badge (always visible) -->
+        <div id="modeBadge">
+            <span id="badgeIconWrap">&#9999;&#65039;</span>
+            <span id="badgeLabel">Draw</span>
+        </div>
 
-        <!-- V3: Color Picker Wheel -->
+        <div id="undoRedoStatus"></div>
+
+        <!-- Radial Color Picker -->
         <div id="colorPicker"></div>
 
         <!-- V3: Fist Progress Ring -->
@@ -471,11 +537,12 @@
 
         <!-- V3: Clear Flash -->
         <div id="clearFlash"></div>
+        <div id="actionFlash" class="action-flash"></div>
 
         <!-- Status -->
         <div id="status">
             <span id="statusDot" class="loading"></span>
-            <span id="statusText">Initializing…</span>
+            <span id="statusText">Initializingâ€¦</span>
         </div>
 
         <!-- Toolbar -->
@@ -487,35 +554,36 @@
             <div class="swatch" data-color="#34C759" title="Green"></div>
             <div class="swatch" data-color="#FFCC00" title="Yellow"></div>
             <div class="divider"></div>
-            <button class="tb-btn" id="eraserBtn">Eraser</button>
+            <button class="tb-btn" id="eraserBtn"><img src="Group%2010.svg" alt="Eraser"
+                    class="eraser-icon">Eraser</button>
             <button class="tb-btn" id="clearBtn">Clear</button>
         </div>
 
         <!-- Loading Overlay -->
         <div id="loadingOverlay">
             <div class="spinner"></div>
-            <span>Loading hand tracking model…</span>
+            <span>Loading hand tracking modelâ€¦</span>
         </div>
     </div>
 
     <script type="module">
-        /* ═══════════════════════════════════════════════════
-           AIR CANVAS — V3 Gesture Layer
+        /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+           AIR CANVAS â€” V3 Gesture Layer
            Single-file implementation. No frameworks.
-           ═══════════════════════════════════════════════════ */
+           â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
         import { FilesetResolver, HandLandmarker, DrawingUtils } from
             'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs';
 
-        // ── V1/V2 Constants ──────────────────────────────
+        // â”€â”€ V1/V2 Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         const PINCH_START_THRESHOLD = 0.16;
         const PINCH_END_THRESHOLD = 0.22;
-        const MIN_MOVE_THRESHOLD = 8;
-        const SMOOTHING_BUFFER_SIZE = 8;
+        const MIN_MOVE_THRESHOLD = 3;
+        const SMOOTHING_BUFFER_SIZE = 3;
         const DOT_HOLD_TIME = 200;
         const STROKE_WIDTH = 3;
 
-        // ── V3 Constants ─────────────────────────────────
+        // â”€â”€ V3 Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         const EXTENSION_RATIO = 1.2;
         const FAST_MOVEMENT_THRESHOLD = 600;
         const PALM_HISTORY_SIZE = 6;
@@ -523,24 +591,33 @@
         const PALM_HOLD_TIME = 500;
         const FIST_HOLD_TIME = 1000;
         const ERASER_WIDTH = 32;
-        const COLOR_PICKER_RADIUS = 80;
-        const SWATCH_HIT_RADIUS = 40;
+        const FIST_ARC_COLOR = '#FF3333';
+        const MODE_BADGE_PULSE_DURATION = 200;
         const PICKER_COLORS = [
             '#000000', '#FFFFFF', '#FF3B30', '#FF9500',
             '#FFCC00', '#34C759', '#007AFF', '#AF52DE'
         ];
 
-        // ── Cursor Smoothing Constants ────────────────────
+        // ── Cursor Smoothing Constants ───────────────────────
         const CURSOR_SMOOTHING_BUFFER_SIZE = 15;  // heavier smoothing than drawing (8)
         const CURSOR_DEAD_ZONE = 4;               // px — ignore movements smaller than this
 
-        // ── DOM References ───────────────────────────────
+        const COLOR_PICKER_RADIUS = 60;
+        const SWATCH_HIT_RADIUS = 20;
+
+        // ── Undo/Redo Constants ──────────────────────────────
+        const UNDO_REPEAT_DELAY = 500;
+        const UNDO_REPEAT_INTERVAL = 300;
+        const UNDO_HISTORY_LIMIT = 10;
+
+        // ── DOM References ───────────────────────────────────
         const video = document.getElementById('webcam');
         const skeletonCanvas = document.getElementById('skeletonCanvas');
         const drawingCanvas = document.getElementById('drawingCanvas');
         const fingerCursor = document.getElementById('fingerCursor');
         const modeBadge = document.getElementById('modeBadge');
-        const colorPickerEl = document.getElementById('colorPicker');
+        const badgeIconWrap = document.getElementById('badgeIconWrap');
+        const badgeLabel = document.getElementById('badgeLabel');
         const fistProgressEl = document.getElementById('fistProgress');
         const clearFlashEl = document.getElementById('clearFlash');
         const pipPanel = document.getElementById('pipPanel');
@@ -552,11 +629,15 @@
         const eraserBtn = document.getElementById('eraserBtn');
         const clearBtn = document.getElementById('clearBtn');
         const loadingOverlay = document.getElementById('loadingOverlay');
+        const colorPickerEl = document.getElementById('colorPicker');
+        const actionFlashEl = document.getElementById('actionFlash');
+        const undoRedoStatus = document.getElementById('undoRedoStatus');
 
-        // ── Core State ───────────────────────────────────
+        // ── Core State ───────────────────────────────────────
         let handLandmarker = null;
         let drawingUtils = null;
         let currentColor = '#000000';
+        let currentColorIndex = 0;
         let currentMode = 'DRAW';  // 'DRAW' | 'ERASE'
 
         // Drawing hand state
@@ -564,30 +645,44 @@
             posBuffer: [],
             prevX: null,
             prevY: null,
+            lastMidX: null,
+            lastMidY: null,
             holdStart: null,
             dotDrawn: false
         };
+
+        // Undo/Redo state
+        let undoStack = [];
+        let redoStack = [];
+        let undoHoldStart = 0;
+        let lastUndoTime = 0;
+        let redoHoldStart = 0;
+        let lastRedoTime = 0;
+        let showStatusTimeout = null;
 
         function resetHandState() {
             handState.posBuffer = [];
             handState.prevX = null;
             handState.prevY = null;
+            handState.lastMidX = null;
+            handState.lastMidY = null;
             handState.holdStart = null;
             handState.dotDrawn = false;
         }
 
-        // ── Gesture State ────────────────────────────────
+        // â”€â”€ Gesture State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         let lastPalmCenter = null;
         let lastFrameTime = 0;
         let handVelocity = { x: 0, y: 0 };
         let palmHistory = [];
         let palmHoldStart = 0;
         let fistHoldStart = 0;
+        let isPinching = false;
+        let wasPinching = false;
         let isColorPickerOpen = false;
         let pickerAnchor = { x: 0, y: 0 };
         let highlightedSwatchIdx = -1;
-        let isPinching = false;
-        let modeBadgeTimer = null;
+        let previousPose = 'NEUTRAL';
         let wasPointing = false;
 
         // Cursor-specific state (separate from drawing pipeline)
@@ -595,7 +690,7 @@
         let displayedCursorX = 0;
         let displayedCursorY = 0;
 
-        // ── Canvas Sizing ────────────────────────────────
+        // â”€â”€ Canvas Sizing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         function resizeCanvases() {
             skeletonCanvas.width = 220;
             skeletonCanvas.height = 165;
@@ -614,7 +709,7 @@
         }
         window.addEventListener('resize', resizeCanvases);
 
-        // ── Smoothing ────────────────────────────────────
+        // â”€â”€ Smoothing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         function getSmoothedPosition(buffer, rawX, rawY) {
             buffer.push({ x: rawX, y: rawY });
             if (buffer.length > SMOOTHING_BUFFER_SIZE) buffer.shift();
@@ -629,9 +724,9 @@
             return { x: smoothX / totalWeight, y: smoothY / totalWeight };
         }
 
-        // ═══════════════════════════════════════════════════
-        //   COORDINATE CONVERSION — V3 centralized
-        // ═══════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //   COORDINATE CONVERSION â€” V3 centralized
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         function convertLandmarks(results) {
             if (!results.landmarks || results.landmarks.length === 0) return null;
             return results.landmarks.map(hand =>
@@ -642,9 +737,9 @@
             );
         }
 
-        // ═══════════════════════════════════════════════════
-        //   GESTURE DETECTION — V3
-        // ═══════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //   GESTURE DETECTION â€” V3
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         function isFingerExtended(landmarks, tipIdx, pipIdx) {
             const wrist = landmarks[0];
             const tip = landmarks[tipIdx];
@@ -671,19 +766,30 @@
                 ring: isFingerExtended(landmarks, 16, 14),
                 pinky: isFingerExtended(landmarks, 20, 18)
             };
+            const allCurled = !ext.index && !ext.middle && !ext.ring && !ext.pinky;
 
-            if (!ext.thumb && ext.index && !ext.middle && !ext.ring && !ext.pinky)
+            // Ignore thumb state for POINT and TWO_FINGERS as thumb resting position varies widely per user
+            if (ext.index && !ext.middle && !ext.ring && !ext.pinky)
                 return 'POINT';
-            if (!ext.thumb && ext.index && ext.middle && !ext.ring && !ext.pinky)
+            if (ext.index && ext.middle && !ext.ring && !ext.pinky)
                 return 'TWO_FINGERS';
+
+            // Thumbs up / down (priority over open palm / fist)
+            if (ext.thumb && allCurled) {
+                const thumbTip = landmarks[4];
+                const wrist = landmarks[0];
+                if (thumbTip.y < wrist.y - 0.05) return 'THUMBS_UP';
+                if (thumbTip.y > wrist.y + 0.05) return 'THUMBS_DOWN';
+            }
+
             if (ext.thumb && ext.index && ext.middle && ext.ring && ext.pinky)
                 return 'OPEN_PALM';
-            if (!ext.thumb && !ext.index && !ext.middle && !ext.ring && !ext.pinky)
+            if (!ext.thumb && allCurled)
                 return 'FIST';
             return 'NEUTRAL';
         }
 
-        // ── Velocity Tracking ────────────────────────────
+        // â”€â”€ Velocity Tracking â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         function getPalmCenter(landmarks) {
             const w = landmarks[0], i = landmarks[5], p = landmarks[17];
             return { x: (w.x + i.x + p.x) / 3, y: (w.y + i.y + p.y) / 3 };
@@ -708,7 +814,7 @@
             return Math.hypot(handVelocity.x, handVelocity.y) > FAST_MOVEMENT_THRESHOLD;
         }
 
-        // ── Palm Stability ───────────────────────────────
+        // â”€â”€ Palm Stability â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         function isPalmStable(landmarks) {
             const center = getPalmCenter(landmarks);
             palmHistory.push(center);
@@ -721,7 +827,7 @@
             );
         }
 
-        // ── Pinch Detection (for color picker) ──────────
+        // â”€â”€ Pinch Detection (for color picker) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         function detectPinch(landmarks) {
             const thumbTip = landmarks[4];
             const indexTip = landmarks[8];
@@ -741,13 +847,15 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════
-        //   DRAWING — preserved from V1/V2
-        // ═══════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //   DRAWING â€” preserved from V1/V2
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         function drawStroke(currX, currY) {
             if (handState.prevX === null) {
                 handState.prevX = currX;
                 handState.prevY = currY;
+                handState.lastMidX = currX;
+                handState.lastMidY = currY;
                 handState.holdStart = performance.now();
                 return;
             }
@@ -792,15 +900,16 @@
             const midY = (handState.prevY + currY) / 2;
 
             drawingCtx.beginPath();
-            drawingCtx.moveTo(handState.prevX, handState.prevY);
+            drawingCtx.moveTo(handState.lastMidX, handState.lastMidY);
             drawingCtx.quadraticCurveTo(handState.prevX, handState.prevY, midX, midY);
-            drawingCtx.lineTo(currX, currY);
             drawingCtx.stroke();
             drawingCtx.restore();
             drawingCtx.globalCompositeOperation = 'source-over';
 
             handState.prevX = currX;
             handState.prevY = currY;
+            handState.lastMidX = midX;
+            handState.lastMidY = midY;
             handState.holdStart = performance.now();
             handState.dotDrawn = false;
         }
@@ -808,120 +917,169 @@
         function endStroke() {
             handState.prevX = null;
             handState.prevY = null;
+            handState.lastMidX = null;
+            handState.lastMidY = null;
             handState.holdStart = null;
             handState.dotDrawn = false;
         }
 
-        // ═══════════════════════════════════════════════════
-        //   COLOR PICKER — V3
-        // ═══════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //   COLOR CYCLING â€” V3 (replaces radial picker)
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ── RADIAL COLOR PICKER ──
         function buildPickerSwatches() {
             colorPickerEl.innerHTML = '';
+            const angleStep = (Math.PI * 2) / PICKER_COLORS.length;
             PICKER_COLORS.forEach((color, i) => {
-                const angle = (i / PICKER_COLORS.length) * Math.PI * 2 - Math.PI / 2;
-                const sx = Math.cos(angle) * COLOR_PICKER_RADIUS;
-                const sy = Math.sin(angle) * COLOR_PICKER_RADIUS;
+                const angle = i * angleStep - Math.PI / 2;
+                const x = COLOR_PICKER_RADIUS * Math.cos(angle);
+                const y = COLOR_PICKER_RADIUS * Math.sin(angle);
+
                 const swatch = document.createElement('div');
                 swatch.className = 'picker-swatch';
-                swatch.dataset.color = color;
-                swatch.style.background = color;
-                swatch.style.transform = `translate(calc(-50% + ${sx}px), calc(-50% + ${sy}px))`;
+                swatch.style.backgroundColor = color;
+                swatch.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+                swatch.dataset.index = i;
+                swatch.dataset.x = x;
+                swatch.dataset.y = y;
+
                 colorPickerEl.appendChild(swatch);
             });
         }
-        buildPickerSwatches();
 
-        function openColorPicker(x, y) {
+        function openColorPicker(fingerPos) {
             isColorPickerOpen = true;
-            pickerAnchor = { x, y };
-            colorPickerEl.style.left = `${x - 100}px`;
-            colorPickerEl.style.top = `${y - 100}px`;
+            pickerAnchor = { x: fingerPos.x, y: fingerPos.y };
+            colorPickerEl.style.left = `${pickerAnchor.x}px`;
+            colorPickerEl.style.top = `${pickerAnchor.y}px`;
             colorPickerEl.classList.add('visible');
+            highlightedSwatchIdx = -1;
+            Array.from(colorPickerEl.children).forEach(s => s.classList.remove('highlighted'));
         }
 
         function closeColorPicker() {
             isColorPickerOpen = false;
-            highlightedSwatchIdx = -1;
             colorPickerEl.classList.remove('visible');
-            document.querySelectorAll('.picker-swatch').forEach(s => s.classList.remove('highlighted'));
+            highlightedSwatchIdx = -1;
         }
 
-        function updatePickerHighlight(fingerX, fingerY) {
-            const swatches = document.querySelectorAll('.picker-swatch');
-            let minDist = Infinity;
-            let nearest = -1;
+        function updatePickerHighlight(fingerPos) {
+            if (!isColorPickerOpen) return;
+            const dx = fingerPos.x - pickerAnchor.x;
+            const dy = fingerPos.y - pickerAnchor.y;
 
-            swatches.forEach((swatch, i) => {
-                swatch.classList.remove('highlighted');
-                const angle = (i / PICKER_COLORS.length) * Math.PI * 2 - Math.PI / 2;
-                const sx = pickerAnchor.x + Math.cos(angle) * COLOR_PICKER_RADIUS;
-                const sy = pickerAnchor.y + Math.sin(angle) * COLOR_PICKER_RADIUS;
-                const d = Math.hypot(fingerX - sx, fingerY - sy);
-                if (d < minDist) {
-                    minDist = d;
-                    nearest = i;
+            highlightedSwatchIdx = -1;
+            const swatches = Array.from(colorPickerEl.children);
+            swatches.forEach(s => s.classList.remove('highlighted'));
+
+            // Check distance from center, if we moved out enough
+            if (Math.hypot(dx, dy) > COLOR_PICKER_RADIUS / 2) {
+                // Find closest swatch
+                let closestIdx = -1;
+                let minDist = Infinity;
+                swatches.forEach((swatch, i) => {
+                    const sx = parseFloat(swatch.dataset.x);
+                    const sy = parseFloat(swatch.dataset.y);
+                    const dist = Math.hypot(dx - sx, dy - sy);
+                    if (dist < minDist && dist < SWATCH_HIT_RADIUS * 3) { // generosity radius
+                        minDist = dist;
+                        closestIdx = i;
+                    }
+                });
+
+                if (closestIdx !== -1) {
+                    highlightedSwatchIdx = closestIdx;
+                    swatches[closestIdx].classList.add('highlighted');
                 }
-            });
-
-            if (minDist < SWATCH_HIT_RADIUS && nearest >= 0) {
-                swatches[nearest].classList.add('highlighted');
-                highlightedSwatchIdx = nearest;
-            } else {
-                highlightedSwatchIdx = -1;
             }
         }
 
-        function selectPickerColor() {
-            if (highlightedSwatchIdx >= 0) {
-                currentColor = PICKER_COLORS[highlightedSwatchIdx];
-                currentMode = 'DRAW';
-                // Sync toolbar
-                document.querySelectorAll('.swatch').forEach(s => {
-                    s.classList.toggle('active', s.dataset.color === currentColor);
-                });
-                eraserBtn.classList.remove('active');
-                showModeBadge(`✓ ${currentColor}`, 'picker-badge');
+        function confirmColor() {
+            if (highlightedSwatchIdx !== -1) {
+                currentColorIndex = highlightedSwatchIdx;
+                currentColor = PICKER_COLORS[currentColorIndex];
+                syncToolbarSwatches();
             }
             closeColorPicker();
         }
 
-        // ═══════════════════════════════════════════════════
-        //   VISUAL FEEDBACK — V3
-        // ═══════════════════════════════════════════════════
-        function showModeBadge(text, badgeClass) {
-            modeBadge.textContent = text;
-            modeBadge.className = badgeClass;
-            modeBadge.classList.add('visible');
-            if (modeBadgeTimer) clearTimeout(modeBadgeTimer);
-            modeBadgeTimer = setTimeout(() => {
-                modeBadge.classList.remove('visible');
-            }, 2000);
+        function syncToolbarSwatches() {
+            document.querySelectorAll('.swatch').forEach(s => {
+                s.classList.toggle('active', s.dataset.color === currentColor);
+            });
+            eraserBtn.classList.remove('active');
         }
 
-        function updateCursor(fingerPos, pose) {
-            // Apply cursor-specific smoothing (15-frame buffer)
-            cursorBuffer.push({ x: fingerPos.x, y: fingerPos.y });
-            if (cursorBuffer.length > CURSOR_SMOOTHING_BUFFER_SIZE) cursorBuffer.shift();
-            let totalWeight = 0, csX = 0, csY = 0;
-            cursorBuffer.forEach((pos, i) => {
-                const w = i + 1;
-                csX += pos.x * w;
-                csY += pos.y * w;
-                totalWeight += w;
-            });
-            const smoothX = csX / totalWeight;
-            const smoothY = csY / totalWeight;
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //   MODE MANAGEMENT â€” V3
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        function setMode(mode) {
+            if (currentMode === mode) return;
+            currentMode = mode;
+            eraserBtn.classList.toggle('active', mode === 'ERASE');
+            if (mode === 'DRAW') {
+                syncToolbarSwatches();
+            } else {
+                document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+            }
+            updateModeBadge();
+            pulseBadge();
+        }
 
-            // Dead zone: only move cursor if it moved more than threshold
-            if (Math.hypot(smoothX - displayedCursorX, smoothY - displayedCursorY) > CURSOR_DEAD_ZONE) {
-                displayedCursorX = smoothX;
-                displayedCursorY = smoothY;
+        function updateModeBadge() {
+            if (currentMode === 'ERASE') {
+                badgeIconWrap.innerHTML = '<img src="Group%2010.svg" alt="Eraser" class="badge-icon">';
+                badgeLabel.textContent = 'Erase';
+                modeBadge.classList.add('erase-mode');
+            } else {
+                badgeIconWrap.textContent = '\u270F\uFE0F';
+                badgeLabel.textContent = 'Draw';
+                modeBadge.classList.remove('erase-mode');
+            }
+        }
+
+        function pulseBadge() {
+            modeBadge.classList.remove('pulse');
+            void modeBadge.offsetWidth;
+            modeBadge.classList.add('pulse');
+            setTimeout(() => modeBadge.classList.remove('pulse'), MODE_BADGE_PULSE_DURATION);
+        }
+
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //   VISUAL FEEDBACK â€” V3
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        function updateCursor(fingerPos, pose) {
+            if (pose === 'POINT') {
+                // Apply a small dead zone while pointing to stop the cursor dot from shimmering 
+                // due to sub-pixel noise, while keeping it perfectly synced with the real-time drawing line
+                if (Math.hypot(fingerPos.x - displayedCursorX, fingerPos.y - displayedCursorY) > 2) {
+                    displayedCursorX = fingerPos.x;
+                    displayedCursorY = fingerPos.y;
+                }
+                cursorBuffer = [];
+                fingerCursor.style.transition = 'none';
+            } else {
+                fingerCursor.style.transition = '';
+                cursorBuffer.push({ x: fingerPos.x, y: fingerPos.y });
+                if (cursorBuffer.length > CURSOR_SMOOTHING_BUFFER_SIZE) cursorBuffer.shift();
+                let totalWeight = 0, csX = 0, csY = 0;
+                cursorBuffer.forEach((pos, i) => {
+                    const w = i + 1;
+                    csX += pos.x * w;
+                    csY += pos.y * w;
+                    totalWeight += w;
+                });
+                const smoothX = csX / totalWeight;
+                const smoothY = csY / totalWeight;
+                if (Math.hypot(smoothX - displayedCursorX, smoothY - displayedCursorY) > CURSOR_DEAD_ZONE) {
+                    displayedCursorX = smoothX;
+                    displayedCursorY = smoothY;
+                }
             }
 
             fingerCursor.style.left = `${displayedCursorX}px`;
             fingerCursor.style.top = `${displayedCursorY}px`;
 
-            // Reset all mode classes
             fingerCursor.classList.remove('drawing', 'erasing', 'picking', 'fist-hold', 'pinching');
             fingerCursor.style.width = '';
             fingerCursor.style.height = '';
@@ -930,11 +1088,10 @@
                 fingerCursor.classList.add('drawing');
             } else if (pose === 'POINT' && currentMode === 'ERASE') {
                 fingerCursor.classList.add('erasing');
-            } else if (pose === 'TWO_FINGERS' || isColorPickerOpen) {
+            } else if (isColorPickerOpen) {
                 fingerCursor.classList.add('picking');
             } else if (pose === 'FIST') {
                 fingerCursor.classList.add('fist-hold');
-                // Scale cursor with hold progress
                 if (fistHoldStart > 0) {
                     const progress = Math.min((performance.now() - fistHoldStart) / FIST_HOLD_TIME, 1);
                     const size = 12 + progress * 20;
@@ -955,48 +1112,86 @@
             fistProgressEl.style.top = `${fingerPos.y - 24}px`;
 
             fistCtx.clearRect(0, 0, 48, 48);
-            fistCtx.strokeStyle = `rgba(255, ${Math.round(50 + 200 * (1 - progress))}, 50, 0.9)`;
+            fistCtx.strokeStyle = FIST_ARC_COLOR;
+            fistCtx.globalAlpha = 0.9;
             fistCtx.lineWidth = 3;
             fistCtx.lineCap = 'round';
             fistCtx.beginPath();
             fistCtx.arc(24, 24, 20, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
             fistCtx.stroke();
+            fistCtx.globalAlpha = 1;
         }
 
         function getSkeletonColor(pose) {
             if (currentMode === 'ERASE') return '#FF8C00';
-            if (isColorPickerOpen) return '#AA44FF';
-            if (pose === 'FIST') return '#FF3333';
-            return '#00FF00';
+            if (pose === 'FIST') return FIST_ARC_COLOR;
+            return '#1e3a5f';
         }
 
         function clearCanvasWithFlash() {
+            saveCanvasState();
             drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
             clearFlashEl.classList.add('flash');
             setTimeout(() => clearFlashEl.classList.remove('flash'), 300);
-            showModeBadge('🗑 Canvas Cleared', 'clear-badge');
         }
 
-        // ═══════════════════════════════════════════════════
-        //   GESTURE STATE MACHINE — V3
-        // ═══════════════════════════════════════════════════
+        // ── Undo / Redo Logic ──
+        function saveCanvasState() {
+            undoStack.push(drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height));
+            if (undoStack.length > UNDO_HISTORY_LIMIT) {
+                undoStack.shift();
+            }
+            redoStack = [];
+        }
+
+        function performUndo() {
+            if (undoStack.length > 0) {
+                redoStack.push(drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height));
+                const previous = undoStack.pop();
+                drawingCtx.putImageData(previous, 0, 0);
+                flashAction('undo');
+            } else {
+                showUndoRedoStatus('Nothing to undo');
+            }
+        }
+
+        function performRedo() {
+            if (redoStack.length > 0) {
+                undoStack.push(drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height));
+                const next = redoStack.pop();
+                drawingCtx.putImageData(next, 0, 0);
+                flashAction('redo');
+            } else {
+                showUndoRedoStatus('Nothing to redo');
+            }
+        }
+
+        function flashAction(type) {
+            actionFlashEl.className = 'action-flash ' + type;
+            void actionFlashEl.offsetWidth; // force reflow
+            actionFlashEl.classList.add('flash');
+            setTimeout(() => actionFlashEl.classList.remove('flash'), 150);
+        }
+
+        function showUndoRedoStatus(msg) {
+            undoRedoStatus.textContent = msg;
+            undoRedoStatus.classList.add('visible');
+            clearTimeout(showStatusTimeout);
+            showStatusTimeout = setTimeout(() => undoRedoStatus.classList.remove('visible'), 1000);
+        }
+
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //   GESTURE STATE MACHINE â€” V3
+        //   Two-mode: DRAW or ERASE
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         function updateGestureState(pose, landmarks, fingerPos) {
-            // ── Open Palm → Toggle Eraser ──
+            const enteredNewPose = (pose !== previousPose);
+
+            // â”€â”€ Open Palm + stable â†’ Toggle Mode â”€â”€
             if (pose === 'OPEN_PALM' && isPalmStable(landmarks)) {
                 if (palmHoldStart === 0) palmHoldStart = performance.now();
                 if (performance.now() - palmHoldStart >= PALM_HOLD_TIME) {
-                    currentMode = currentMode === 'DRAW' ? 'ERASE' : 'DRAW';
-                    eraserBtn.classList.toggle('active', currentMode === 'ERASE');
-                    if (currentMode === 'DRAW') {
-                        // Re-activate toolbar swatch
-                        document.querySelectorAll('.swatch').forEach(s => {
-                            s.classList.toggle('active', s.dataset.color === currentColor);
-                        });
-                    } else {
-                        document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
-                    }
-                    showModeBadge(currentMode === 'ERASE' ? '🧹 Eraser Mode' : '✏️ Draw Mode',
-                        currentMode === 'ERASE' ? 'erase-badge' : '');
+                    setMode(currentMode === 'DRAW' ? 'ERASE' : 'DRAW');
                     palmHoldStart = 0;
                     palmHistory = [];
                 }
@@ -1005,7 +1200,7 @@
                 palmHistory = [];
             }
 
-            // ── Fist → Clear Canvas ──
+            // â”€â”€ Fist held â†’ Clear Canvas (stays in current mode) â”€â”€
             if (pose === 'FIST') {
                 if (fistHoldStart === 0) fistHoldStart = performance.now();
                 updateFistProgress(fingerPos);
@@ -1018,25 +1213,62 @@
                 fistProgressEl.classList.remove('visible');
             }
 
-            // ── Two Fingers → Color Picker ──
+            // ── Pinch → Confirm Color ──
+            detectPinch(landmarks);
+            if (isPinching && !wasPinching) {
+                if (isColorPickerOpen) {
+                    confirmColor();
+                    if (currentMode === 'ERASE') {
+                        setMode('DRAW');
+                    }
+                }
+            }
+            wasPinching = isPinching;
+
+            // ── Two Fingers → Open Picker ──
             if (pose === 'TWO_FINGERS') {
-                detectPinch(landmarks);
                 if (!isColorPickerOpen) {
-                    openColorPicker(fingerPos.x, fingerPos.y);
+                    openColorPicker(fingerPos);
                 }
-                updatePickerHighlight(fingerPos.x, fingerPos.y);
-                if (isPinching && highlightedSwatchIdx >= 0) {
-                    selectPickerColor();
-                }
-            } else if (pose !== 'TWO_FINGERS' && isColorPickerOpen) {
+            } else if (isColorPickerOpen && !isPinching) {
+                // If we drop two fingers AND we are not currently pinching to confirm, close it
                 closeColorPicker();
+            }
+
+            // ── Thumbs Gestures (Undo/Redo) ──
+            if (pose === 'THUMBS_DOWN') {
+                if (enteredNewPose) {
+                    performUndo();
+                    undoHoldStart = performance.now();
+                } else if (undoHoldStart > 0 && performance.now() - undoHoldStart > UNDO_REPEAT_DELAY) {
+                    if (performance.now() - lastUndoTime > UNDO_REPEAT_INTERVAL) {
+                        performUndo();
+                        lastUndoTime = performance.now();
+                    }
+                }
+            } else {
+                undoHoldStart = 0;
+            }
+
+            if (pose === 'THUMBS_UP') {
+                if (enteredNewPose) {
+                    performRedo();
+                    redoHoldStart = performance.now();
+                } else if (redoHoldStart > 0 && performance.now() - redoHoldStart > UNDO_REPEAT_DELAY) {
+                    if (performance.now() - lastRedoTime > UNDO_REPEAT_INTERVAL) {
+                        performRedo();
+                        lastRedoTime = performance.now();
+                    }
+                }
+            } else {
+                redoHoldStart = 0;
             }
 
             // ── Point → Drawing ──
             if (pose === 'POINT') {
                 if (!wasPointing) {
-                    // Reset smooth buffer at start of new pointing
                     handState.posBuffer = [];
+                    saveCanvasState();
                 }
                 wasPointing = true;
             } else {
@@ -1045,11 +1277,15 @@
                 }
                 wasPointing = false;
             }
+
+            previousPose = pose;
         }
 
-        // ═══════════════════════════════════════════════════
-        //   PROCESS RESULTS — V3 Pipeline
-        // ═══════════════════════════════════════════════════
+
+
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //   PROCESS RESULTS â€” V3 Pipeline
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         function processResults(results) {
             // Clear skeleton every frame
             skeletonCtx.save();
@@ -1083,14 +1319,22 @@
             // Step 3: Pose (suppress during fast movement)
             const pose = isHandMovingFast() ? 'NEUTRAL' : getHandPose(landmarks);
 
-            // Step 4–5: Smoothed finger position (for drawing — 8-frame buffer)
+            // Step 4: Raw index tip position (jitter filtered in drawStroke via MIN_MOVE_THRESHOLD)
             const indexTip = landmarks[8];
+            // Light smoothing for gesture state & cursor â€” drawing uses raw position
             const smoothedPos = getSmoothedPosition(handState.posBuffer, indexTip.x, indexTip.y);
 
-            // Step 4: Gesture state machine
+            // Gesture state machine
             updateGestureState(pose, landmarks, smoothedPos);
 
-            // Step 5: Draw/erase when pointing
+            // Picker logic
+            if (isColorPickerOpen) {
+                // Let the user drag their finger to point at the picker 
+                // We use the raw index tip for snappy highlight matching
+                updatePickerHighlight(smoothedPos);
+            }
+
+            // Step 5: Draw/erase uses smoothed position to filter micro-tremors (3 frames)
             if (pose === 'POINT') {
                 drawStroke(smoothedPos.x, smoothedPos.y);
             }
@@ -1109,18 +1353,18 @@
                     lineWidth: 2
                 });
                 drawingUtils.drawLandmarks(mirrored, {
-                    color: '#FF0000',
-                    radius: 4
+                    color: '#0f1419',
+                    radius: 1.5
                 });
             }
 
-            // Step 7: Cursor
+            // Step 7: Cursor should use smoothed coordinate when drawing to perfectly match ink position.
             updateCursor(smoothedPos, pose);
 
             skeletonCtx.restore();
         }
 
-        // ── Detection Loop ───────────────────────────────
+        // â”€â”€ Detection Loop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         let lastTimestamp = -1;
 
         function detectLoop() {
@@ -1141,9 +1385,9 @@
             requestAnimationFrame(detectLoop);
         }
 
-        // ═══════════════════════════════════════════════════
-        //   DRAGGABLE PIP — V3
-        // ═══════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //   DRAGGABLE PIP â€” V3
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         function setupDraggablePIP(el) {
             let isDragging = false;
             let dragStartX, dragStartY, pipStartLeft, pipStartTop;
@@ -1187,41 +1431,34 @@
             });
         }
 
-        // ═══════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //   UI EVENT HANDLERS (toolbar fallback)
-        // ═══════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         document.querySelectorAll('.swatch').forEach(swatch => {
             swatch.addEventListener('click', () => {
-                document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
-                swatch.classList.add('active');
                 currentColor = swatch.dataset.color;
-                currentMode = 'DRAW';
-                eraserBtn.classList.remove('active');
+                currentColorIndex = PICKER_COLORS.indexOf(currentColor);
+                if (currentColorIndex < 0) currentColorIndex = 0;
+                setMode('DRAW');
+                syncToolbarSwatches();
+                updateModeBadge();
             });
         });
 
         eraserBtn.addEventListener('click', () => {
-            currentMode = currentMode === 'ERASE' ? 'DRAW' : 'ERASE';
-            eraserBtn.classList.toggle('active', currentMode === 'ERASE');
-            if (currentMode === 'ERASE') {
-                document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
-            } else {
-                document.querySelectorAll('.swatch').forEach(s => {
-                    s.classList.toggle('active', s.dataset.color === currentColor);
-                });
-            }
+            setMode(currentMode === 'ERASE' ? 'DRAW' : 'ERASE');
         });
 
         clearBtn.addEventListener('click', () => {
             clearCanvasWithFlash();
         });
 
-        // ═══════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //   INITIALIZATION
-        // ═══════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         async function init() {
             try {
-                statusText.textContent = 'Requesting camera…';
+                statusText.textContent = 'Requesting cameraâ€¦';
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
                 });
@@ -1230,7 +1467,7 @@
 
                 resizeCanvases();
 
-                statusText.textContent = 'Loading hand tracking model…';
+                statusText.textContent = 'Loading hand tracking modelâ€¦';
                 const vision = await FilesetResolver.forVisionTasks(
                     'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
                 );
@@ -1268,6 +1505,7 @@
             }
         }
 
+        buildPickerSwatches();
         init();
     </script>
 </body>
