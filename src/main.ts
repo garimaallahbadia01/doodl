@@ -126,7 +126,6 @@ function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
     // -- Point -> Drawing --
     if (pose === 'POINT') {
         if (!appState.wasPointing) {
-            handState.posBuffer = [];
             saveCanvasState();
         }
         appState.wasPointing = true;

@@ -29,10 +29,8 @@ export function updateCursor(fingerPos: Point2D, pose: string, fistHoldStart: nu
     if (!fingerCursor) return;
 
     if (pose === 'POINT') {
-        if (Math.hypot(fingerPos.x - displayedCursorX, fingerPos.y - displayedCursorY) > CURSOR_DEAD_ZONE) {
-            displayedCursorX = fingerPos.x;
-            displayedCursorY = fingerPos.y;
-        }
+        displayedCursorX = fingerPos.x;
+        displayedCursorY = fingerPos.y;
         cursorBuffer = [];
         fingerCursor.style.transition = 'none';
     } else {

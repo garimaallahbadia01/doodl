@@ -1,7 +1,7 @@
 export const PINCH_START_THRESHOLD = 0.16;
 export const PINCH_END_THRESHOLD = 0.22;
-export const MIN_MOVE_THRESHOLD = 3;
-export const SMOOTHING_BUFFER_SIZE = 3;
+export const MIN_MOVE_THRESHOLD = 5;
+export const SMOOTHING_BUFFER_SIZE = 10;
 export const DOT_HOLD_TIME = 200;
 
 export const STROKE_WIDTH_DEFAULT = 3;
@@ -27,5 +27,5 @@ export const UNDO_REPEAT_INTERVAL = 300;
 export const UNDO_HISTORY_LIMIT = 10;
 export const SWATCH_HIT_RADIUS = 28;
 export const CURSOR_SMOOTHING_BUFFER_SIZE = 15;
-export const CURSOR_DEAD_ZONE = 2;
+export const CURSOR_DEAD_ZONE = 5;
 export const COLOR_PICKER_RADIUS = 60;
