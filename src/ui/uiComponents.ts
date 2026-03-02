@@ -1,6 +1,6 @@
 import { appState } from '../core/appState';
 import { PICKER_COLORS, COLOR_PICKER_RADIUS, SWATCH_HIT_RADIUS, MODE_BADGE_PULSE_DURATION, FIST_HOLD_TIME, FIST_ARC_COLOR } from '../constants';
-import { clearCanvas } from '../drawing/drawingState';
+import { clearCanvas, downloadCanvas } from '../drawing/drawingState';
 
 let colorPickerEl: HTMLElement;
 let modeBadge: HTMLElement;
@@ -52,6 +52,11 @@ export function initUIComponents() {
 
     clearBtn.addEventListener('click', () => {
         clearCanvasWithFlash();
+    });
+
+    const exportBtn = document.getElementById('exportBtn')!;
+    exportBtn.addEventListener('click', () => {
+        downloadCanvas();
     });
 
     gridBtn.addEventListener('click', () => {

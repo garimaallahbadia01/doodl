@@ -59,3 +59,33 @@ export function clearCanvas() {
     saveCanvasState();
     drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
 }
+
+export function downloadCanvas() {
+    if (!drawingCanvas) return;
+
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = drawingCanvas.width;
+    tempCanvas.height = drawingCanvas.height;
+    const tempCtx = tempCanvas.getContext('2d')!;
+
+    // Black background
+    tempCtx.fillStyle = '#0a0a0f';
+    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+    tempCtx.drawImage(drawingCanvas, 0, 0);
+
+    const dataUrl = tempCanvas.toDataURL('image/png', 1.0);
+    const link = document.createElement('a');
+
+    // YYYY-MM-DD format
+    const date = new Date();
+    const iso = date.toISOString().split('T')[0];
+    const time = `${date.getHours()}-${date.getMinutes()}-${date.getSeconds()}`;
+
+    link.download = `doodl-${iso}-${time}.png`;
+    link.href = dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    flashAction('redo'); // Reuse flash anim temporarily
+}
