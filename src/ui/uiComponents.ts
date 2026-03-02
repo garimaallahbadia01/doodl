@@ -8,6 +8,8 @@ let badgeIconWrap: HTMLElement;
 let badgeLabel: HTMLElement;
 let eraserBtn: HTMLElement;
 let clearBtn: HTMLElement;
+let gridBtn: HTMLElement;
+let drawingPanel: HTMLElement;
 let actionFlashEl: HTMLElement;
 let undoRedoStatus: HTMLElement;
 let brushSlider: HTMLInputElement;
@@ -25,6 +27,8 @@ export function initUIComponents() {
     badgeLabel = document.getElementById('badgeLabel')!;
     eraserBtn = document.getElementById('eraserBtn')!;
     clearBtn = document.getElementById('clearBtn')!;
+    gridBtn = document.getElementById('gridBtn')!;
+    drawingPanel = document.getElementById('drawingPanel')!;
     actionFlashEl = document.getElementById('actionFlash')!;
     undoRedoStatus = document.getElementById('undoRedoStatus')!;
     brushSlider = document.getElementById('brushSlider') as HTMLInputElement;
@@ -48,6 +52,11 @@ export function initUIComponents() {
 
     clearBtn.addEventListener('click', () => {
         clearCanvasWithFlash();
+    });
+
+    gridBtn.addEventListener('click', () => {
+        drawingPanel.classList.toggle('grid-enabled');
+        gridBtn.classList.toggle('active');
     });
 }
 
