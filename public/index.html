@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Air Canvas</title>
+    <link rel="stylesheet" href="/src/ui/styles.css">
+</head>
+<body>
+    <div id="app">
+        <div id="container">
+        <!-- Panel A: Drawing Canvas (Main Stage) -->
+        <div id="drawingPanel">
+            <canvas id="drawingCanvas"></canvas>
+        </div>
+
+        <!-- Panel B: Camera PIP (Bottom Right) -->
+        <div id="pipPanel">
+            <video id="webcam" autoplay playsinline></video>
+            <canvas id="skeletonCanvas"></canvas>
+        </div>
+
+        <!-- Layer: Finger Cursor -->
+        <div id="fingerCursor" class="finger-cursor"></div>
+
+        <!-- V3: Mode Badge (always visible) -->
+        <div id="modeBadge">
+            <span id="badgeIconWrap">&#9999;&#65039;</span>
+            <span id="badgeLabel">Draw</span>
+        </div>
+
+        <div id="undoRedoStatus"></div>
+
+        <!-- Radial Color Picker -->
+        <div id="colorPicker"></div>
+
+        <!-- V3: Fist Progress Ring -->
+        <canvas id="fistProgress" width="48" height="48"></canvas>
+
+        <!-- V3: Clear Flash -->
+        <div id="clearFlash"></div>
+        <div id="actionFlash" class="action-flash"></div>
+
+        <!-- Status -->
+        <div id="status">
+            <span id="statusDot" class="loading"></span>
+            <span id="statusText">Initializingâ€¦</span>
+        </div>
+
+        <!-- Toolbar -->
+        <div id="toolbar">
+            <div class="swatch active" data-color="#000000" title="Black"></div>
+            <div class="swatch" data-color="#FFFFFF" title="White"></div>
+            <div class="swatch" data-color="#FF3B30" title="Red"></div>
+            <div class="swatch" data-color="#007AFF" title="Blue"></div>
+            <div class="swatch" data-color="#34C759" title="Green"></div>
+            <div class="swatch" data-color="#FFCC00" title="Yellow"></div>
+            <div class="divider"></div>
+            <div class="brush-size-group">
+                <div class="brush-preview">
+                    <div class="brush-preview-dot" id="brushPreviewDot"></div>
+                </div>
+                <input type="range" id="brushSlider" min="1" max="20" value="3" title="Brush Size">
+            </div>
+            <div class="divider"></div>
+            <button class="tb-btn" id="eraserBtn"><img src="Group%2010.svg" alt="Eraser"
+                    class="eraser-icon">Eraser</button>
+            <button class="tb-btn" id="clearBtn">Clear</button>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay">
+            <div class="spinner"></div>
+            <span>Loading hand tracking modelâ€¦</span>
+        </div>
+    </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

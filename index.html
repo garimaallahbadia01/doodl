@@ -216,6 +216,66 @@
             background: rgba(255, 255, 255, 0.15);
         }
 
+
+        /* -- Brush Size Slider -- */
+        .brush-size-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brush-preview {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .brush-preview-dot {
+            border-radius: 50%;
+            background: #fff;
+            transition: width 0.15s, height 0.15s;
+        }
+
+        #brushSlider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 80px;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            cursor: pointer;
+        }
+
+        #brushSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        #brushSlider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        #brushSlider::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+        }
+
         /* â”€â”€ Status Indicator â”€â”€ */
         #status {
             position: absolute;
@@ -554,6 +614,13 @@
             <div class="swatch" data-color="#34C759" title="Green"></div>
             <div class="swatch" data-color="#FFCC00" title="Yellow"></div>
             <div class="divider"></div>
+            <div class="brush-size-group">
+                <div class="brush-preview">
+                    <div class="brush-preview-dot" id="brushPreviewDot"></div>
+                </div>
+                <input type="range" id="brushSlider" min="1" max="20" value="3" title="Brush Size">
+            </div>
+            <div class="divider"></div>
             <button class="tb-btn" id="eraserBtn"><img src="Group%2010.svg" alt="Eraser"
                     class="eraser-icon">Eraser</button>
             <button class="tb-btn" id="clearBtn">Clear</button>
@@ -581,7 +648,10 @@
         const MIN_MOVE_THRESHOLD = 3;
         const SMOOTHING_BUFFER_SIZE = 3;
         const DOT_HOLD_TIME = 200;
-        const STROKE_WIDTH = 3;
+        const STROKE_WIDTH_DEFAULT = 3;
+        const STROKE_WIDTH_MIN = 1;
+        const STROKE_WIDTH_MAX = 20;
+        const ERASER_WIDTH_SCALE = 10;  // eraser is brush size * this factor
 
         // â”€â”€ V3 Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         const EXTENSION_RATIO = 1.2;
@@ -590,7 +660,7 @@
         const PALM_STABILITY_THRESHOLD = 30;
         const PALM_HOLD_TIME = 500;
         const FIST_HOLD_TIME = 1000;
-        const ERASER_WIDTH = 32;
+        // (eraser width is now dynamic: currentStrokeWidth * ERASER_WIDTH_SCALE)
         const FIST_ARC_COLOR = '#FF3333';
         const MODE_BADGE_PULSE_DURATION = 200;
         const PICKER_COLORS = [
@@ -632,6 +702,8 @@
         const colorPickerEl = document.getElementById('colorPicker');
         const actionFlashEl = document.getElementById('actionFlash');
         const undoRedoStatus = document.getElementById('undoRedoStatus');
+        const brushSlider = document.getElementById('brushSlider');
+        const brushPreviewDot = document.getElementById('brushPreviewDot');
 
         // ── Core State ───────────────────────────────────────
         let handLandmarker = null;
@@ -639,6 +711,7 @@
         let currentColor = '#000000';
         let currentColorIndex = 0;
         let currentMode = 'DRAW';  // 'DRAW' | 'ERASE'
+        let currentStrokeWidth = STROKE_WIDTH_DEFAULT;
 
         // Drawing hand state
         let handState = {
@@ -872,7 +945,7 @@
                             drawingCtx.globalCompositeOperation = 'destination-out';
                         }
                         drawingCtx.beginPath();
-                        drawingCtx.arc(currX, currY, (currentMode === 'ERASE' ? ERASER_WIDTH : STROKE_WIDTH) / 2, 0, Math.PI * 2);
+                        drawingCtx.arc(currX, currY, (currentMode === 'ERASE' ? currentStrokeWidth * ERASER_WIDTH_SCALE : currentStrokeWidth) / 2, 0, Math.PI * 2);
                         drawingCtx.fillStyle = currentMode === 'ERASE' ? '#000' : currentColor;
                         drawingCtx.fill();
                         drawingCtx.restore();
@@ -887,11 +960,11 @@
             if (currentMode === 'ERASE') {
                 drawingCtx.globalCompositeOperation = 'destination-out';
                 drawingCtx.strokeStyle = '#000';
-                drawingCtx.lineWidth = ERASER_WIDTH;
+                drawingCtx.lineWidth = currentStrokeWidth * ERASER_WIDTH_SCALE;
             } else {
                 drawingCtx.globalCompositeOperation = 'source-over';
                 drawingCtx.strokeStyle = currentColor;
-                drawingCtx.lineWidth = STROKE_WIDTH;
+                drawingCtx.lineWidth = currentStrokeWidth;
             }
             drawingCtx.lineCap = 'round';
             drawingCtx.lineJoin = 'round';
@@ -1451,6 +1524,19 @@
 
         clearBtn.addEventListener('click', () => {
             clearCanvasWithFlash();
+        });
+
+        // -- Brush Size Slider --
+        function updateBrushPreview() {
+            const size = Math.max(3, currentStrokeWidth);
+            brushPreviewDot.style.width = size + 'px';
+            brushPreviewDot.style.height = size + 'px';
+        }
+        updateBrushPreview();
+
+        brushSlider.addEventListener('input', (e) => {
+            currentStrokeWidth = parseInt(e.target.value, 10);
+            updateBrushPreview();
         });
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

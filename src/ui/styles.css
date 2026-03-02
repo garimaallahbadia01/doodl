@@ -1,0 +1,552 @@
+/* â”€â”€ Reset & Base â”€â”€ */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: radial-gradient(ellipse at center, #12121a 0%, #0a0a0f 100%);
+            min-height: 100vh;
+            font-family: system-ui, -apple-system, 'SF Pro Display', sans-serif;
+            font-weight: 300;
+            letter-spacing: 0.08em;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* â”€â”€ Container â”€â”€ */
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* â”€â”€ Panel A: Drawing Canvas â”€â”€ */
+        #drawingPanel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #fafaf8;
+            z-index: 1;
+            /* Main stage background */
+        }
+
+        #drawingCanvas {
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        /* â”€â”€ Panel B: Camera PIP â”€â”€ */
+        #pipPanel {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 220px;
+            height: 165px;
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow:
+                inset 0 0 0 1px rgba(255, 255, 255, 0.15),
+                0 8px 32px rgba(0, 0, 0, 0.4);
+            z-index: 100;
+        }
+
+        #webcam {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #skeletonCanvas {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* â”€â”€ Floating Finger Cursor â”€â”€ */
+        .finger-cursor {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: rgba(50, 50, 50, 0.85);
+            box-shadow: 0 0 8px 3px rgba(100, 120, 255, 0.4);
+            position: fixed;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            transition: left 0.05s linear, top 0.05s linear;
+            z-index: 1000;
+        }
+
+        /* â”€â”€ Panel C: Toolbar â”€â”€ */
+        #toolbar {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 100px;
+            /* Pill shape */
+            padding: 10px 18px;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.25),
+                inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        /* â”€â”€ Color Swatches â”€â”€ */
+        .swatch {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            box-shadow:
+                inset -2px -2px 4px rgba(0, 0, 0, 0.25),
+                inset 1px 1px 3px rgba(255, 255, 255, 0.4);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .swatch:hover {
+            transform: scale(1.15);
+        }
+
+        .swatch.active {
+            box-shadow:
+                inset -2px -2px 4px rgba(0, 0, 0, 0.25),
+                inset 1px 1px 3px rgba(255, 255, 255, 0.4),
+                0 0 0 2px white;
+        }
+
+        .swatch[data-color="#000000"] {
+            background: #000;
+        }
+
+        .swatch[data-color="#FFFFFF"] {
+            background: #fff;
+        }
+
+        .swatch[data-color="#FF3B30"] {
+            background: #FF3B30;
+        }
+
+        .swatch[data-color="#007AFF"] {
+            background: #007AFF;
+        }
+
+        .swatch[data-color="#34C759"] {
+            background: #34C759;
+        }
+
+        .swatch[data-color="#FFCC00"] {
+            background: #FFCC00;
+        }
+
+        /* â”€â”€ Buttons â”€â”€ */
+        .tb-btn {
+            padding: 7px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+            color: #ddd;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+            user-select: none;
+        }
+
+        .tb-btn:hover {
+            background: rgba(255, 255, 255, 0.18);
+            color: #fff;
+        }
+
+        .tb-btn.active {
+            background: rgba(255, 80, 80, 0.35);
+            color: #ff9090;
+            border-color: rgba(255, 80, 80, 0.4);
+        }
+
+        #eraserBtn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #eraserBtn .eraser-icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* â”€â”€ Divider â”€â”€ */
+        .divider {
+            width: 1px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+
+        /* -- Brush Size Slider -- */
+        .brush-size-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brush-preview {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .brush-preview-dot {
+            border-radius: 50%;
+            background: #fff;
+            transition: width 0.15s, height 0.15s;
+        }
+
+        #brushSlider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 80px;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            cursor: pointer;
+        }
+
+        #brushSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        #brushSlider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        #brushSlider::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+        }
+
+        /* â”€â”€ Status Indicator â”€â”€ */
+        #status {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 4;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(30, 30, 30, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            padding: 8px 18px;
+            font-size: 13px;
+            color: #aaa;
+            backdrop-filter: blur(6px);
+            transition: opacity 0.3s;
+        }
+
+        #statusDot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #666;
+            transition: background 0.25s;
+        }
+
+        #statusDot.detected {
+            background: #34C759;
+        }
+
+        #statusDot.loading {
+            background: #FFCC00;
+        }
+
+        /* â”€â”€ Loading Overlay â”€â”€ */
+        #loadingOverlay {
+            position: absolute;
+            inset: 0;
+            z-index: 100;
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            color: #ccc;
+            font-size: 15px;
+            transition: opacity 0.5s;
+        }
+
+        #loadingOverlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+           V3 â€” Gesture Layer Styles
+           â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+        /* â”€â”€ Cursor Mode Variants â”€â”€ */
+        .finger-cursor.drawing {
+            background: rgba(50, 50, 50, 0.9);
+            box-shadow: 0 0 10px 4px rgba(100, 120, 255, 0.5);
+            animation: cursorPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes cursorPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 8px 3px rgba(100, 120, 255, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 14px 6px rgba(100, 120, 255, 0.6);
+            }
+        }
+
+        .finger-cursor.erasing {
+            width: 28px;
+            height: 28px;
+            background: url('Group%2010.svg') center/contain no-repeat;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        .finger-cursor.picking {
+            width: 10px;
+            height: 10px;
+            border-radius: 0;
+            background: transparent;
+            box-shadow: none;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            transform: translate(-50%, -50%) rotate(45deg);
+        }
+
+        .finger-cursor.fist-hold {
+            background: rgba(255, 50, 50, 0.9);
+            box-shadow: 0 0 14px 6px rgba(255, 50, 50, 0.5);
+            transition: width 0.3s, height 0.3s, background 0.2s;
+        }
+
+        /* â”€â”€ Mode Badge â”€â”€ */
+        #modeBadge {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            color: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(24px) saturate(160%);
+            -webkit-backdrop-filter: blur(24px) saturate(160%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            pointer-events: none;
+            transition: background 0.2s ease;
+        }
+
+        #modeBadge.erase-mode {
+            background: rgba(255, 140, 0, 0.2);
+            border-color: rgba(255, 140, 0, 0.25);
+        }
+
+        #modeBadge .badge-icon {
+            width: 14px;
+            height: 14px;
+        }
+
+        @keyframes badgePulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.15);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        #modeBadge.pulse {
+            animation: badgePulse 200ms ease;
+        }
+
+        /* â”€â”€ Fist Progress Ring â”€â”€ */
+        #fistProgress {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1001;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+
+        #fistProgress.visible {
+            opacity: 1;
+        }
+
+        /* â”€â”€ PIP Drag â”€â”€ */
+        #pipPanel {
+            cursor: grab;
+        }
+
+        #pipPanel.dragging {
+            cursor: grabbing;
+        }
+
+        /* â”€â”€ Canvas Clear Flash â”€â”€ */
+        #clearFlash {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        #clearFlash.flash {
+            opacity: 0.6;
+        }
+
+        /* ── Undo/Redo Flashes & Status ── */
+        .action-flash {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s ease;
+        }
+
+        .action-flash.undo {
+            background: rgba(150, 150, 150, 0.3);
+        }
+
+        .action-flash.redo {
+            background: rgba(100, 150, 255, 0.3);
+        }
+
+        .action-flash.flash {
+            opacity: 1;
+        }
+
+        #undoRedoStatus {
+            position: fixed;
+            top: 60px;
+            left: 20px;
+            padding: 6px 14px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.65);
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 100;
+        }
+
+        #undoRedoStatus.visible {
+            opacity: 1;
+        }
+
+        /* ── Radial Color Picker ── */
+        #colorPicker {
+            position: fixed;
+            width: 200px;
+            height: 200px;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: opacity 0.2s, transform 0.2s;
+        }
+
+        #colorPicker.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .picker-swatch {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .picker-swatch.highlighted {
+            transform: scale(1.3) !important;
+            /* overrides JS inline transform scale implicitly or we handle it in JS */
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.9), 0 8px 16px rgba(0, 0, 0, 0.5);
+            z-index: 2;
+        }
