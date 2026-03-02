@@ -20,6 +20,7 @@ let statusText: HTMLElement;
 let loadingOverlay: HTMLElement;
 let drawingUtils: any = null;
 
+let isCameraActive = true;
 let previousPose = 'NEUTRAL';
 let wasPinching = false;
 let lastTimestamp = -1;
@@ -202,7 +203,7 @@ function processResults(results: any) {
 }
 
 function detectLoop() {
-    if (!handLandmarker || video.readyState < 2) {
+    if (!isCameraActive || !handLandmarker || video.readyState < 2) {
         requestAnimationFrame(detectLoop);
         return;
     }
@@ -239,6 +240,41 @@ async function init() {
         setupDraggablePIP(document.getElementById('pipPanel')!);
 
         window.addEventListener('resize', resizeCanvases);
+
+        const cameraBtn = document.getElementById('cameraBtn')!;
+        cameraBtn.addEventListener('click', async () => {
+            isCameraActive = !isCameraActive;
+            if (isCameraActive) {
+                cameraBtn.textContent = 'Cam On';
+                cameraBtn.classList.add('active');
+                statusText.textContent = 'Requesting camera...';
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
+                    });
+                    video.srcObject = stream;
+                    await video.play();
+                    statusText.textContent = 'Hand Tracking Active';
+                    statusDot.classList.add('detected');
+                } catch (e: any) {
+                    statusText.textContent = 'Error: ' + e.message;
+                }
+            } else {
+                cameraBtn.textContent = 'Cam Off';
+                cameraBtn.classList.remove('active');
+                const stream = video.srcObject as MediaStream;
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                video.srcObject = null;
+                statusText.textContent = 'Camera Off';
+                statusDot.classList.remove('detected');
+                skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
+                document.getElementById('fingerCursor')!.style.display = 'none';
+                if (appState.wasPointing) { endStroke(); appState.wasPointing = false; }
+                updateFistProgress({ x: 0, y: 0 }, 0);
+            }
+        });
 
         statusText.textContent = 'Requesting cameraâ€¦';
         const stream = await navigator.mediaDevices.getUserMedia({
