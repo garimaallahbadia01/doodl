@@ -18,7 +18,7 @@ let drawingCtx: CanvasRenderingContext2D;
 let statusDot: HTMLElement;
 let statusText: HTMLElement;
 let loadingOverlay: HTMLElement;
-let drawingUtils: any = null;
+let drawingUtils: DrawingUtils | null = null;
 
 let isCameraActive = true;
 let previousPose = 'NEUTRAL';
@@ -140,6 +140,11 @@ function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
 }
 
 function processResults(results: any) {
+    if (!drawingUtils) {
+        console.warn('drawingUtils not ready yet');
+        return;
+    }
+
     skeletonCtx.save();
     skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
 
@@ -289,8 +294,6 @@ async function init() {
 
         drawingUtils = new DrawingUtils(skeletonCtx);
 
-        loadingOverlay.style.opacity = '0';
-        setTimeout(() => loadingOverlay.style.display = 'none', 500);
         statusText.textContent = 'Hand Tracking Active';
 
         console.log('Doodl modular initialized successfully.');
@@ -301,6 +304,9 @@ async function init() {
         statusText.textContent = 'Error: ' + err.message;
         statusDot.classList.remove('loading');
         loadingOverlay.querySelector('span')!.textContent = 'Failed: ' + err.message;
+    } finally {
+        loadingOverlay.style.opacity = '0';
+        setTimeout(() => loadingOverlay.style.display = 'none', 500);
     }
 }
 

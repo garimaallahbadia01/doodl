@@ -14,18 +14,26 @@ export function initDrawingState(canvas: HTMLCanvasElement) {
 
 export function saveCanvasState() {
     if (!drawingCtx || !drawingCanvas) return;
-    undoStack.push(drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height));
-    if (undoStack.length > UNDO_HISTORY_LIMIT) {
-        undoStack.shift();
+    try {
+        undoStack.push(drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height));
+        if (undoStack.length > UNDO_HISTORY_LIMIT) {
+            undoStack.shift();
+        }
+        redoStack = [];
+    } catch (e) {
+        console.warn('Undo snapshot failed (memory):', e);
     }
-    redoStack = [];
 }
 
 export function performUndo() {
     if (undoStack.length > 0) {
-        redoStack.push(drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height));
-        const previous = undoStack.pop();
-        if (previous) drawingCtx.putImageData(previous, 0, 0);
+        try {
+            redoStack.push(drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height));
+            const previous = undoStack.pop();
+            if (previous) drawingCtx.putImageData(previous, 0, 0);
+        } catch (e) {
+            console.warn('Undo snapshot failed (memory):', e);
+        }
         flashAction('undo');
     } else {
         showUndoRedoStatus('Nothing to undo');
@@ -34,9 +42,13 @@ export function performUndo() {
 
 export function performRedo() {
     if (redoStack.length > 0) {
-        undoStack.push(drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height));
-        const next = redoStack.pop();
-        if (next) drawingCtx.putImageData(next, 0, 0);
+        try {
+            undoStack.push(drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height));
+            const next = redoStack.pop();
+            if (next) drawingCtx.putImageData(next, 0, 0);
+        } catch (e) {
+            console.warn('Undo snapshot failed (memory):', e);
+        }
         flashAction('redo');
     } else {
         showUndoRedoStatus('Nothing to redo');
