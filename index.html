@@ -4,12 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Air Canvas â€” draw in the air using hand tracking. No install required.">
+    <meta name="description" content="Air Canvas - draw in the air using hand tracking. No install required.">
     <title>Air Canvas</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
     <style>
-        /* â”€â”€ Reset & Base â”€â”€ */
+        /* == Reset & Base == */
         *,
         *::before,
         *::after {
@@ -31,14 +31,14 @@
             color: rgba(255, 255, 255, 0.7);
         }
 
-        /* â”€â”€ Container â”€â”€ */
+        /* == Container == */
         #container {
             position: relative;
             width: 100vw;
             height: 100vh;
         }
 
-        /* â”€â”€ Panel A: Drawing Canvas â”€â”€ */
+        /* == Panel A: Drawing Canvas == */
         #drawingPanel {
             position: absolute;
             top: 0;
@@ -56,7 +56,7 @@
             pointer-events: none;
         }
 
-        /* â”€â”€ Panel B: Camera PIP â”€â”€ */
+        /* == Panel B: Camera PIP == */
         #pipPanel {
             position: fixed;
             bottom: 24px;
@@ -89,7 +89,7 @@
             left: 0;
         }
 
-        /* â”€â”€ Floating Finger Cursor â”€â”€ */
+        /* == Floating Finger Cursor == */
         .finger-cursor {
             width: 14px;
             height: 14px;
@@ -126,7 +126,7 @@
                 inset 0 -1px 0 rgba(255, 255, 255, 0.05);
         }
 
-        /* â”€â”€ Color Swatches â”€â”€ */
+        /* == Color Swatches == */
         .swatch {
             width: 20px;
             height: 20px;
@@ -174,7 +174,7 @@
             background: #FFCC00;
         }
 
-        /* â”€â”€ Buttons â”€â”€ */
+        /* == Buttons == */
         .tb-btn {
             padding: 7px 16px;
             border-radius: 8px;
@@ -209,7 +209,7 @@
             height: 16px;
         }
 
-        /* â”€â”€ Divider â”€â”€ */
+        /* == Divider == */
         .divider {
             width: 1px;
             height: 24px;
@@ -276,7 +276,7 @@
             cursor: pointer;
         }
 
-        /* â”€â”€ Status Indicator â”€â”€ */
+        /* == Status Indicator == */
         #status {
             position: absolute;
             top: 16px;
@@ -312,7 +312,7 @@
             background: #FFCC00;
         }
 
-        /* â”€â”€ Loading Overlay â”€â”€ */
+        /* == Loading Overlay == */
         #loadingOverlay {
             position: absolute;
             inset: 0;
@@ -348,11 +348,9 @@
             }
         }
 
-        /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-           V3 â€” Gesture Layer Styles
-           â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+        /* ===== V3 - Gesture Layer Styles ===== */
 
-        /* â”€â”€ Cursor Mode Variants â”€â”€ */
+        /* == Cursor Mode Variants == */
         .finger-cursor.drawing {
             background: rgba(50, 50, 50, 0.9);
             box-shadow: 0 0 10px 4px rgba(100, 120, 255, 0.5);
@@ -446,7 +444,7 @@
             animation: badgePulse 200ms ease;
         }
 
-        /* â”€â”€ Fist Progress Ring â”€â”€ */
+        /* == Fist Progress Ring == */
         #fistProgress {
             position: fixed;
             pointer-events: none;
@@ -459,7 +457,7 @@
             opacity: 1;
         }
 
-        /* â”€â”€ PIP Drag â”€â”€ */
+        /* == PIP Drag == */
         #pipPanel {
             cursor: grab;
         }
@@ -468,7 +466,7 @@
             cursor: grabbing;
         }
 
-        /* â”€â”€ Canvas Clear Flash â”€â”€ */
+        /* == Canvas Clear Flash == */
         #clearFlash {
             position: fixed;
             inset: 0;
@@ -602,7 +600,7 @@
         <!-- Status -->
         <div id="status">
             <span id="statusDot" class="loading"></span>
-            <span id="statusText">Initializingâ€¦</span>
+            <span id="statusText">Initializing...</span>
         </div>
 
         <!-- Toolbar -->
@@ -629,15 +627,14 @@
         <!-- Loading Overlay -->
         <div id="loadingOverlay">
             <div class="spinner"></div>
-            <span>Loading hand tracking modelâ€¦</span>
+            <span>Loading hand tracking model...</span>
         </div>
     </div>
 
     <script type="module">
-        /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-           AIR CANVAS â€” V3 Gesture Layer
+        /* ===== AIR CANVAS - V3 Gesture Layer =====
            Single-file implementation. No frameworks.
-           â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+        */
 
         import { FilesetResolver, HandLandmarker, DrawingUtils } from
             'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs';
@@ -862,7 +859,7 @@
             return 'NEUTRAL';
         }
 
-        // â”€â”€ Velocity Tracking â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // â”€â”€ Velocity Tracking â”€â”€â”€â”€â”€â”€â”€â”€â”€â���€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         function getPalmCenter(landmarks) {
             const w = landmarks[0], i = landmarks[5], p = landmarks[17];
             return { x: (w.x + i.x + p.x) / 3, y: (w.y + i.y + p.y) / 3 };
@@ -1506,7 +1503,7 @@
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //   UI EVENT HANDLERS (toolbar fallback)
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â���â•â•â•â•â•â•â•â•â•
         document.querySelectorAll('.swatch').forEach(swatch => {
             swatch.addEventListener('click', () => {
                 currentColor = swatch.dataset.color;
