@@ -149,7 +149,7 @@ function processResults(results: any) {
 
     if (!results.landmarks || results.landmarks.length === 0) {
         statusDot.classList.remove('detected', 'poor-light');
-        statusText.textContent = 'No hand detected';
+        statusText.textContent = 'Hand out of frame';
         if (appState.wasPointing) { endStroke(); appState.wasPointing = false; }
         document.getElementById('fingerCursor')!.style.display = 'none';
         updateFistProgress({ x: 0, y: 0 }, 0);
@@ -168,19 +168,28 @@ function processResults(results: any) {
     statusDot.classList.remove('poor-light');
     statusDot.classList.add('detected');
 
-    // Detect poor light / bad tracking via Z-depth confidence grouping or raw visibility if possible
-    // MediaPipe Hands provides x,y,z. If Z is wildly fluctuating or missing, it's often poor light.
-    // Instead we can analyze the results.handednesses confidence score!
+    const isOutOfBounds = results.landmarks[0].some((lm: any) =>
+        lm.x < 0.05 || lm.x > 0.95 || lm.y < 0.05 || lm.y > 0.95
+    );
+
     if (results.handednesses && results.handednesses.length > 0) {
         const conf = results.handednesses[0][0].score;
-        if (conf < 0.85) { // Empirically, low light or dirty lens drops confidence below 0.85 
+        if (conf < 0.85) {
             statusDot.classList.add('poor-light');
             statusText.textContent = 'Poor lighting or dirty lens';
+        } else if (isOutOfBounds) {
+            statusDot.classList.add('poor-light');
+            statusText.textContent = 'Hand moving out of frame';
         } else {
             statusText.textContent = converted.length === 1 ? '1 hand detected' : `${converted.length} hands detected`;
         }
     } else {
-        statusText.textContent = converted.length === 1 ? '1 hand detected' : `${converted.length} hands detected`;
+        if (isOutOfBounds) {
+            statusDot.classList.add('poor-light');
+            statusText.textContent = 'Hand moving out of frame';
+        } else {
+            statusText.textContent = converted.length === 1 ? '1 hand detected' : `${converted.length} hands detected`;
+        }
     }
 
     const landmarks = converted[0];
