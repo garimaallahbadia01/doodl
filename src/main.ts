@@ -173,9 +173,9 @@ function processResults(results: any) {
     // Instead we can analyze the results.handednesses confidence score!
     if (results.handednesses && results.handednesses.length > 0) {
         const conf = results.handednesses[0][0].score;
-        if (conf < 0.85) { // Empirically, low light drops confidence below 0.85 
+        if (conf < 0.85) { // Empirically, low light or dirty lens drops confidence below 0.85 
             statusDot.classList.add('poor-light');
-            statusText.textContent = 'Poor lighting detected';
+            statusText.textContent = 'Poor lighting or dirty lens';
         } else {
             statusText.textContent = converted.length === 1 ? '1 hand detected' : `${converted.length} hands detected`;
         }
