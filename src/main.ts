@@ -258,7 +258,7 @@ async function init() {
         setTimeout(() => loadingOverlay.style.display = 'none', 500);
         statusText.textContent = 'Hand Tracking Active';
 
-        console.log('Air Canvas V3 modular initialized successfully.');
+        console.log('Doodl modular initialized successfully.');
         requestAnimationFrame(detectLoop);
 
     } catch (err: any) {

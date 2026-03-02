@@ -4,12 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Air Canvas â€” draw in the air using hand tracking. No install required.">
-    <title>Air Canvas</title>
+    <meta name="description" content="Doodl  draw in the air using hand tracking. No install required.">
+    <title>Doodl</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
     <style>
-        /* â”€â”€ Reset & Base â”€â”€ */
+        /*  Reset & Base  */
         *,
         *::before,
         *::after {
@@ -31,14 +31,14 @@
             color: rgba(255, 255, 255, 0.7);
         }
 
-        /* â”€â”€ Container â”€â”€ */
+        /*  Container  */
         #container {
             position: relative;
             width: 100vw;
             height: 100vh;
         }
 
-        /* â”€â”€ Panel A: Drawing Canvas â”€â”€ */
+        /*  Panel A: Drawing Canvas  */
         #drawingPanel {
             position: absolute;
             top: 0;
@@ -56,7 +56,7 @@
             pointer-events: none;
         }
 
-        /* â”€â”€ Panel B: Camera PIP â”€â”€ */
+        /*  Panel B: Camera PIP  */
         #pipPanel {
             position: fixed;
             bottom: 24px;
@@ -89,7 +89,7 @@
             left: 0;
         }
 
-        /* â”€â”€ Floating Finger Cursor â”€â”€ */
+        /*  Floating Finger Cursor  */
         .finger-cursor {
             width: 14px;
             height: 14px;
@@ -103,7 +103,7 @@
             z-index: 1000;
         }
 
-        /* â”€â”€ Panel C: Toolbar â”€â”€ */
+        /*  Panel C: Toolbar  */
         #toolbar {
             position: fixed;
             bottom: 24px;
@@ -126,7 +126,7 @@
                 inset 0 -1px 0 rgba(255, 255, 255, 0.05);
         }
 
-        /* â”€â”€ Color Swatches â”€â”€ */
+        /*  Color Swatches  */
         .swatch {
             width: 20px;
             height: 20px;
@@ -174,7 +174,7 @@
             background: #FFCC00;
         }
 
-        /* â”€â”€ Buttons â”€â”€ */
+        /*  Buttons  */
         .tb-btn {
             padding: 7px 16px;
             border-radius: 8px;
@@ -209,7 +209,7 @@
             height: 16px;
         }
 
-        /* â”€â”€ Divider â”€â”€ */
+        /*  Divider  */
         .divider {
             width: 1px;
             height: 24px;
@@ -276,7 +276,7 @@
             cursor: pointer;
         }
 
-        /* â”€â”€ Status Indicator â”€â”€ */
+        /*  Status Indicator  */
         #status {
             position: absolute;
             top: 16px;
@@ -312,7 +312,7 @@
             background: #FFCC00;
         }
 
-        /* â”€â”€ Loading Overlay â”€â”€ */
+        /*  Loading Overlay  */
         #loadingOverlay {
             position: absolute;
             inset: 0;
@@ -348,11 +348,11 @@
             }
         }
 
-        /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-           V3 â€” Gesture Layer Styles
-           â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+        /* 
+           V3  Gesture Layer Styles
+            */
 
-        /* â”€â”€ Cursor Mode Variants â”€â”€ */
+        /*  Cursor Mode Variants  */
         .finger-cursor.drawing {
             background: rgba(50, 50, 50, 0.9);
             box-shadow: 0 0 10px 4px rgba(100, 120, 255, 0.5);
@@ -395,7 +395,7 @@
             transition: width 0.3s, height 0.3s, background 0.2s;
         }
 
-        /* â”€â”€ Mode Badge â”€â”€ */
+        /*  Mode Badge  */
         #modeBadge {
             position: fixed;
             top: 20px;
@@ -446,7 +446,7 @@
             animation: badgePulse 200ms ease;
         }
 
-        /* â”€â”€ Fist Progress Ring â”€â”€ */
+        /*  Fist Progress Ring  */
         #fistProgress {
             position: fixed;
             pointer-events: none;
@@ -459,7 +459,7 @@
             opacity: 1;
         }
 
-        /* â”€â”€ PIP Drag â”€â”€ */
+        /*  PIP Drag  */
         #pipPanel {
             cursor: grab;
         }
@@ -468,7 +468,7 @@
             cursor: grabbing;
         }
 
-        /* â”€â”€ Canvas Clear Flash â”€â”€ */
+        /*  Canvas Clear Flash  */
         #clearFlash {
             position: fixed;
             inset: 0;
@@ -483,7 +483,7 @@
             opacity: 0.6;
         }
 
-        /* ── Undo/Redo Flashes & Status ── */
+        /*  Undo/Redo Flashes & Status  */
         .action-flash {
             position: fixed;
             inset: 0;
@@ -526,7 +526,7 @@
             opacity: 1;
         }
 
-        /* ── Radial Color Picker ── */
+        /*  Radial Color Picker  */
         #colorPicker {
             position: fixed;
             width: 200px;
@@ -602,7 +602,7 @@
         <!-- Status -->
         <div id="status">
             <span id="statusDot" class="loading"></span>
-            <span id="statusText">Initializingâ€¦</span>
+            <span id="statusText">Initializing</span>
         </div>
 
         <!-- Toolbar -->
@@ -629,20 +629,20 @@
         <!-- Loading Overlay -->
         <div id="loadingOverlay">
             <div class="spinner"></div>
-            <span>Loading hand tracking modelâ€¦</span>
+            <span>Loading hand tracking model</span>
         </div>
     </div>
 
     <script type="module">
-        /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-           AIR CANVAS â€” V3 Gesture Layer
+        /* 
+           DOODL  V3 Gesture Layer
            Single-file implementation. No frameworks.
-           â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+            */
 
         import { FilesetResolver, HandLandmarker, DrawingUtils } from
             'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs';
 
-        // â”€â”€ V1/V2 Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        //  V1/V2 Constants 
         const PINCH_START_THRESHOLD = 0.16;
         const PINCH_END_THRESHOLD = 0.22;
         const MIN_MOVE_THRESHOLD = 3;
@@ -653,7 +653,7 @@
         const STROKE_WIDTH_MAX = 20;
         const ERASER_WIDTH_SCALE = 10;  // eraser is brush size * this factor
 
-        // â”€â”€ V3 Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        //  V3 Constants 
         const EXTENSION_RATIO = 1.2;
         const FAST_MOVEMENT_THRESHOLD = 600;
         const PALM_HISTORY_SIZE = 6;
@@ -668,19 +668,19 @@
             '#FFCC00', '#34C759', '#007AFF', '#AF52DE'
         ];
 
-        // ── Cursor Smoothing Constants ───────────────────────
+        //  Cursor Smoothing Constants 
         const CURSOR_SMOOTHING_BUFFER_SIZE = 15;  // heavier smoothing than drawing (8)
-        const CURSOR_DEAD_ZONE = 4;               // px — ignore movements smaller than this
+        const CURSOR_DEAD_ZONE = 4;               // px  ignore movements smaller than this
 
         const COLOR_PICKER_RADIUS = 60;
         const SWATCH_HIT_RADIUS = 20;
 
-        // ── Undo/Redo Constants ──────────────────────────────
+        //  Undo/Redo Constants 
         const UNDO_REPEAT_DELAY = 500;
         const UNDO_REPEAT_INTERVAL = 300;
         const UNDO_HISTORY_LIMIT = 10;
 
-        // ── DOM References ───────────────────────────────────
+        //  DOM References 
         const video = document.getElementById('webcam');
         const skeletonCanvas = document.getElementById('skeletonCanvas');
         const drawingCanvas = document.getElementById('drawingCanvas');
@@ -705,7 +705,7 @@
         const brushSlider = document.getElementById('brushSlider');
         const brushPreviewDot = document.getElementById('brushPreviewDot');
 
-        // ── Core State ───────────────────────────────────────
+        //  Core State 
         let handLandmarker = null;
         let drawingUtils = null;
         let currentColor = '#000000';
@@ -743,7 +743,7 @@
             handState.dotDrawn = false;
         }
 
-        // â”€â”€ Gesture State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        //  Gesture State 
         let lastPalmCenter = null;
         let lastFrameTime = 0;
         let handVelocity = { x: 0, y: 0 };
@@ -763,7 +763,7 @@
         let displayedCursorX = 0;
         let displayedCursorY = 0;
 
-        // â”€â”€ Canvas Sizing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        //  Canvas Sizing 
         function resizeCanvases() {
             skeletonCanvas.width = 220;
             skeletonCanvas.height = 165;
@@ -782,7 +782,7 @@
         }
         window.addEventListener('resize', resizeCanvases);
 
-        // â”€â”€ Smoothing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        //  Smoothing 
         function getSmoothedPosition(buffer, rawX, rawY) {
             buffer.push({ x: rawX, y: rawY });
             if (buffer.length > SMOOTHING_BUFFER_SIZE) buffer.shift();
@@ -797,9 +797,9 @@
             return { x: smoothX / totalWeight, y: smoothY / totalWeight };
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //   COORDINATE CONVERSION â€” V3 centralized
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // 
+        //   COORDINATE CONVERSION  V3 centralized
+        // 
         function convertLandmarks(results) {
             if (!results.landmarks || results.landmarks.length === 0) return null;
             return results.landmarks.map(hand =>
@@ -810,9 +810,9 @@
             );
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //   GESTURE DETECTION â€” V3
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // 
+        //   GESTURE DETECTION  V3
+        // 
         function isFingerExtended(landmarks, tipIdx, pipIdx) {
             const wrist = landmarks[0];
             const tip = landmarks[tipIdx];
@@ -862,7 +862,7 @@
             return 'NEUTRAL';
         }
 
-        // â”€â”€ Velocity Tracking â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        //  Velocity Tracking 
         function getPalmCenter(landmarks) {
             const w = landmarks[0], i = landmarks[5], p = landmarks[17];
             return { x: (w.x + i.x + p.x) / 3, y: (w.y + i.y + p.y) / 3 };
@@ -887,7 +887,7 @@
             return Math.hypot(handVelocity.x, handVelocity.y) > FAST_MOVEMENT_THRESHOLD;
         }
 
-        // â”€â”€ Palm Stability â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        //  Palm Stability 
         function isPalmStable(landmarks) {
             const center = getPalmCenter(landmarks);
             palmHistory.push(center);
@@ -900,7 +900,7 @@
             );
         }
 
-        // â”€â”€ Pinch Detection (for color picker) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        //  Pinch Detection (for color picker) 
         function detectPinch(landmarks) {
             const thumbTip = landmarks[4];
             const indexTip = landmarks[8];
@@ -920,9 +920,9 @@
             }
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //   DRAWING â€” preserved from V1/V2
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // 
+        //   DRAWING  preserved from V1/V2
+        // 
         function drawStroke(currX, currY) {
             if (handState.prevX === null) {
                 handState.prevX = currX;
@@ -996,10 +996,10 @@
             handState.dotDrawn = false;
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //   COLOR CYCLING â€” V3 (replaces radial picker)
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        // ── RADIAL COLOR PICKER ──
+        // 
+        //   COLOR CYCLING  V3 (replaces radial picker)
+        // 
+        //  RADIAL COLOR PICKER 
         function buildPickerSwatches() {
             colorPickerEl.innerHTML = '';
             const angleStep = (Math.PI * 2) / PICKER_COLORS.length;
@@ -1083,9 +1083,9 @@
             eraserBtn.classList.remove('active');
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //   MODE MANAGEMENT â€” V3
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // 
+        //   MODE MANAGEMENT  V3
+        // 
         function setMode(mode) {
             if (currentMode === mode) return;
             currentMode = mode;
@@ -1118,9 +1118,9 @@
             setTimeout(() => modeBadge.classList.remove('pulse'), MODE_BADGE_PULSE_DURATION);
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //   VISUAL FEEDBACK â€” V3
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // 
+        //   VISUAL FEEDBACK  V3
+        // 
         function updateCursor(fingerPos, pose) {
             if (pose === 'POINT') {
                 // Apply a small dead zone while pointing to stop the cursor dot from shimmering 
@@ -1208,7 +1208,7 @@
             setTimeout(() => clearFlashEl.classList.remove('flash'), 300);
         }
 
-        // ── Undo / Redo Logic ──
+        //  Undo / Redo Logic 
         function saveCanvasState() {
             undoStack.push(drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height));
             if (undoStack.length > UNDO_HISTORY_LIMIT) {
@@ -1253,14 +1253,14 @@
             showStatusTimeout = setTimeout(() => undoRedoStatus.classList.remove('visible'), 1000);
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //   GESTURE STATE MACHINE â€” V3
+        // 
+        //   GESTURE STATE MACHINE  V3
         //   Two-mode: DRAW or ERASE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // 
         function updateGestureState(pose, landmarks, fingerPos) {
             const enteredNewPose = (pose !== previousPose);
 
-            // â”€â”€ Open Palm + stable â†’ Toggle Mode â”€â”€
+            //  Open Palm + stable  Toggle Mode 
             if (pose === 'OPEN_PALM' && isPalmStable(landmarks)) {
                 if (palmHoldStart === 0) palmHoldStart = performance.now();
                 if (performance.now() - palmHoldStart >= PALM_HOLD_TIME) {
@@ -1273,7 +1273,7 @@
                 palmHistory = [];
             }
 
-            // â”€â”€ Fist held â†’ Clear Canvas (stays in current mode) â”€â”€
+            //  Fist held  Clear Canvas (stays in current mode) 
             if (pose === 'FIST') {
                 if (fistHoldStart === 0) fistHoldStart = performance.now();
                 updateFistProgress(fingerPos);
@@ -1286,7 +1286,7 @@
                 fistProgressEl.classList.remove('visible');
             }
 
-            // ── Pinch → Confirm Color ──
+            //  Pinch  Confirm Color 
             detectPinch(landmarks);
             if (isPinching && !wasPinching) {
                 if (isColorPickerOpen) {
@@ -1298,7 +1298,7 @@
             }
             wasPinching = isPinching;
 
-            // ── Two Fingers → Open Picker ──
+            //  Two Fingers  Open Picker 
             if (pose === 'TWO_FINGERS') {
                 if (!isColorPickerOpen) {
                     openColorPicker(fingerPos);
@@ -1308,7 +1308,7 @@
                 closeColorPicker();
             }
 
-            // ── Thumbs Gestures (Undo/Redo) ──
+            //  Thumbs Gestures (Undo/Redo) 
             if (pose === 'THUMBS_DOWN') {
                 if (enteredNewPose) {
                     performUndo();
@@ -1337,7 +1337,7 @@
                 redoHoldStart = 0;
             }
 
-            // ── Point → Drawing ──
+            //  Point  Drawing 
             if (pose === 'POINT') {
                 if (!wasPointing) {
                     handState.posBuffer = [];
@@ -1356,9 +1356,9 @@
 
 
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //   PROCESS RESULTS â€” V3 Pipeline
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // 
+        //   PROCESS RESULTS  V3 Pipeline
+        // 
         function processResults(results) {
             // Clear skeleton every frame
             skeletonCtx.save();
@@ -1394,7 +1394,7 @@
 
             // Step 4: Raw index tip position (jitter filtered in drawStroke via MIN_MOVE_THRESHOLD)
             const indexTip = landmarks[8];
-            // Light smoothing for gesture state & cursor â€” drawing uses raw position
+            // Light smoothing for gesture state & cursor  drawing uses raw position
             const smoothedPos = getSmoothedPosition(handState.posBuffer, indexTip.x, indexTip.y);
 
             // Gesture state machine
@@ -1437,7 +1437,7 @@
             skeletonCtx.restore();
         }
 
-        // â”€â”€ Detection Loop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        //  Detection Loop 
         let lastTimestamp = -1;
 
         function detectLoop() {
@@ -1458,9 +1458,9 @@
             requestAnimationFrame(detectLoop);
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //   DRAGGABLE PIP â€” V3
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // 
+        //   DRAGGABLE PIP  V3
+        // 
         function setupDraggablePIP(el) {
             let isDragging = false;
             let dragStartX, dragStartY, pipStartLeft, pipStartTop;
@@ -1504,9 +1504,9 @@
             });
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // 
         //   UI EVENT HANDLERS (toolbar fallback)
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // 
         document.querySelectorAll('.swatch').forEach(swatch => {
             swatch.addEventListener('click', () => {
                 currentColor = swatch.dataset.color;
@@ -1539,12 +1539,12 @@
             updateBrushPreview();
         });
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // 
         //   INITIALIZATION
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // 
         async function init() {
             try {
-                statusText.textContent = 'Requesting cameraâ€¦';
+                statusText.textContent = 'Requesting camera';
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
                 });
@@ -1553,7 +1553,7 @@
 
                 resizeCanvases();
 
-                statusText.textContent = 'Loading hand tracking modelâ€¦';
+                statusText.textContent = 'Loading hand tracking model';
                 const vision = await FilesetResolver.forVisionTasks(
                     'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
                 );
@@ -1579,7 +1579,7 @@
                 statusDot.classList.remove('loading');
                 statusText.textContent = 'No hand detected';
 
-                console.log('Air Canvas V3 initialized successfully.');
+                console.log('Doodl initialized successfully.');
                 console.log('HAND_CONNECTIONS:', HandLandmarker.HAND_CONNECTIONS);
                 requestAnimationFrame(detectLoop);
 

@@ -1,6 +1,6 @@
-# Air Canvas
+# Doodl
 
-Welcome to Air Canvas! This is a web-based drawing application that lets you paint on your screen using just your hands and a webcam, completely touch-free. 
+Welcome to Doodl! This is a web-based drawing application that lets you paint on your screen using just your hands and a webcam, completely touch-free. 
 
 It uses Google's MediaPipe for real-time hand tracking and translates your physical gestures into smooth, dynamic canvas strokes.
 

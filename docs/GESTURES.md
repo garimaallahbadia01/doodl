@@ -1,6 +1,6 @@
 # Gesture Dictionary
 
-Air Canvas V3 maps distinct hand poses to actions via sophisticated geometric filtering and bounding box heuristics.
+Doodl maps distinct hand poses to actions via sophisticated geometric filtering and bounding box heuristics.
 
 ### Base Modifiers
 - **Fast Movement Filtering**: If a hand moves faster than `FAST_MOVEMENT_THRESHOLD` per second, gestures are ignored, and the pose falls back to `NEUTRAL`. This drastically limits accidental triggering during gross arm sweeps.
