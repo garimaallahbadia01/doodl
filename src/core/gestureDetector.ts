@@ -1,19 +1,20 @@
 import { PoseMode, Point2D } from '../types';
-import { PINCH_START_THRESHOLD, PINCH_END_THRESHOLD, EXTENSION_RATIO, FAST_MOVEMENT_THRESHOLD, PALM_HISTORY_SIZE, PALM_STABILITY_THRESHOLD } from '../constants';
+import { PINCH_START_THRESHOLD, PINCH_END_THRESHOLD, INDEX_EXTENSION_RATIO, OTHERS_EXTENSION_RATIO, FAST_MOVEMENT_THRESHOLD, PALM_HISTORY_SIZE, PALM_STABILITY_THRESHOLD } from '../constants';
 
 export let handVelocity = { x: 0, y: 0 };
 export let palmHistory: Point2D[] = [];
 export let isPinching = false;
 let lastPalmCenter: Point2D | null = null;
 let lastFrameTime = 0;
+let poseHistory: PoseMode[] = [];
 
-export function isFingerExtended(landmarks: any[], tipIdx: number, pipIdx: number) {
+export function isFingerExtended(landmarks: any[], tipIdx: number, pipIdx: number, ratio: number) {
     const wrist = landmarks[0];
     const tip = landmarks[tipIdx];
     const pip = landmarks[pipIdx];
     const distTip = Math.hypot(tip.x - wrist.x, tip.y - wrist.y);
     const distPip = Math.hypot(pip.x - wrist.x, pip.y - wrist.y);
-    return distTip > distPip * EXTENSION_RATIO;
+    return distTip > distPip * ratio;
 }
 
 export function isThumbExtended(landmarks: any[]) {
@@ -28,27 +29,36 @@ export function isThumbExtended(landmarks: any[]) {
 export function getHandPose(landmarks: any[]): PoseMode {
     const ext = {
         thumb: isThumbExtended(landmarks),
-        index: isFingerExtended(landmarks, 8, 6),
-        middle: isFingerExtended(landmarks, 12, 10),
-        ring: isFingerExtended(landmarks, 16, 14),
-        pinky: isFingerExtended(landmarks, 20, 18)
+        index: isFingerExtended(landmarks, 8, 6, INDEX_EXTENSION_RATIO),
+        middle: isFingerExtended(landmarks, 12, 10, OTHERS_EXTENSION_RATIO),
+        ring: isFingerExtended(landmarks, 16, 14, OTHERS_EXTENSION_RATIO),
+        pinky: isFingerExtended(landmarks, 20, 18, OTHERS_EXTENSION_RATIO)
     };
     const allCurled = !ext.index && !ext.middle && !ext.ring && !ext.pinky;
 
-    if (ext.index && !ext.middle && !ext.ring && !ext.pinky) return 'POINT';
-    if (ext.index && ext.middle && !ext.ring && !ext.pinky) return 'TWO_FINGERS';
+    let rawPose: PoseMode = 'NEUTRAL';
 
-    if (ext.thumb && allCurled) {
+    if (ext.index && !ext.middle && !ext.ring && !ext.pinky) rawPose = 'POINT';
+    else if (ext.index && ext.middle && !ext.ring && !ext.pinky) rawPose = 'TWO_FINGERS';
+    else if (ext.thumb && allCurled) {
         const thumbTip = landmarks[4];
         const wrist = landmarks[0];
-        if (thumbTip.y < wrist.y - 0.05) return 'THUMBS_UP';
-        if (thumbTip.y > wrist.y + 0.05) return 'THUMBS_DOWN';
+        if (thumbTip.y < wrist.y - 0.05) rawPose = 'THUMBS_UP';
+        else if (thumbTip.y > wrist.y + 0.05) rawPose = 'THUMBS_DOWN';
+    }
+    else if (ext.thumb && ext.index && ext.middle && ext.ring && ext.pinky) rawPose = 'OPEN_PALM';
+    else if (!ext.thumb && allCurled) rawPose = 'FIST';
+
+    // Anti-flicker: 3-frame rolling window
+    poseHistory.push(rawPose);
+    if (poseHistory.length > 3) poseHistory.shift();
+
+    // If POINT was detected twice in the last 3 frames, force POINT to bridge 1-frame drops
+    if (poseHistory.filter(p => p === 'POINT').length >= 2) {
+        return 'POINT';
     }
 
-    if (ext.thumb && ext.index && ext.middle && ext.ring && ext.pinky) return 'OPEN_PALM';
-    if (!ext.thumb && allCurled) return 'FIST';
-
-    return 'NEUTRAL';
+    return rawPose;
 }
 
 export function getPalmCenter(landmarks: any[]): Point2D {

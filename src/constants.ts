@@ -18,7 +18,8 @@ export const ERASER_WIDTH_SCALE = 10;
 // ----------------------------------------------------
 // Advanced Kinematic and Timing Settings
 // ----------------------------------------------------
-export const EXTENSION_RATIO = 1.2;
+export const INDEX_EXTENSION_RATIO = 1.12;
+export const OTHERS_EXTENSION_RATIO = 1.28;
 export const FAST_MOVEMENT_THRESHOLD = 4000;
 export const PALM_HISTORY_SIZE = 6;
 export const PALM_STABILITY_THRESHOLD = 30;
