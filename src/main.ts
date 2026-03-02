@@ -275,7 +275,7 @@ async function init() {
             }
         });
 
-        statusText.textContent = 'Requesting cameraâ€¦';
+        statusText.textContent = 'Requesting camera...';
         const stream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
         });
@@ -284,7 +284,7 @@ async function init() {
 
         resizeCanvases();
 
-        statusText.textContent = 'Loading hand tracking modelâ€¦';
+        statusText.textContent = 'Loading hand tracking model...';
         await initHandTracking();
 
         drawingUtils = new DrawingUtils(skeletonCtx);
