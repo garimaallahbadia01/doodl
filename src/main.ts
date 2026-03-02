@@ -148,7 +148,7 @@ function processResults(results: any) {
     skeletonCtx.save();
 
     if (!results.landmarks || results.landmarks.length === 0) {
-        statusDot.classList.remove('detected');
+        statusDot.classList.remove('detected', 'poor-light');
         statusText.textContent = 'No hand detected';
         if (appState.wasPointing) { endStroke(); appState.wasPointing = false; }
         document.getElementById('fingerCursor')!.style.display = 'none';
@@ -165,8 +165,23 @@ function processResults(results: any) {
     );
 
     document.getElementById('fingerCursor')!.style.display = '';
+    statusDot.classList.remove('poor-light');
     statusDot.classList.add('detected');
-    statusText.textContent = converted.length === 1 ? '1 hand detected' : `${converted.length} hands detected`;
+
+    // Detect poor light / bad tracking via Z-depth confidence grouping or raw visibility if possible
+    // MediaPipe Hands provides x,y,z. If Z is wildly fluctuating or missing, it's often poor light.
+    // Instead we can analyze the results.handednesses confidence score!
+    if (results.handednesses && results.handednesses.length > 0) {
+        const conf = results.handednesses[0][0].score;
+        if (conf < 0.85) { // Empirically, low light drops confidence below 0.85 
+            statusDot.classList.add('poor-light');
+            statusText.textContent = 'Poor lighting detected';
+        } else {
+            statusText.textContent = converted.length === 1 ? '1 hand detected' : `${converted.length} hands detected`;
+        }
+    } else {
+        statusText.textContent = converted.length === 1 ? '1 hand detected' : `${converted.length} hands detected`;
+    }
 
     const landmarks = converted[0];
 
