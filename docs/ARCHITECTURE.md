@@ -1,6 +1,6 @@
 # Architecture Overview
 
-Doodl has been modularized from a monolithic single-file prototype into a scalable TypeScript application powered by Vite.
+Doodle has been modularized from a monolithic single-file prototype into a scalable TypeScript application powered by Vite.
 
 ## Directory Structure
 The application is organized into the following core domains within the `src/` directory:

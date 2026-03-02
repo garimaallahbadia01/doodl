@@ -16,7 +16,7 @@ Start the Vite development server with Hot-Module Replacement (HMR):
 npm run dev
 ```
 
-Navigate to `http://localhost:3000` (or whatever specific port the terminal provides) to see Doodl running. Ensure you are well lit with a clear view of your hands in the PIP.
+Navigate to `http://localhost:3000` (or whatever specific port the terminal provides) to see Doodle running. Ensure you are well lit with a clear view of your hands in the PIP.
 
 ### Production Dist
 

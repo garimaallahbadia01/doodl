@@ -286,7 +286,7 @@ async function init() {
 
         statusText.textContent = 'Hand Tracking Active';
 
-        console.log('Doodl modular initialized successfully.');
+        console.log('Doodle modular initialized successfully.');
         requestAnimationFrame(detectLoop);
 
     } catch (err: any) {

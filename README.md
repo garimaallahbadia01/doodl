@@ -1,6 +1,6 @@
-# Doodl
+# Doodle
 
-Welcome to Doodl! This is a web-based drawing application that lets you paint on your screen using just your hands and a webcam, completely touch-free. 
+Welcome to Doodle! This is a web-based drawing application that lets you paint on your screen using just your hands and a webcam, completely touch-free. 
 
 It uses Google's MediaPipe for real-time hand tracking and translates your physical gestures into smooth, dynamic canvas strokes.
 

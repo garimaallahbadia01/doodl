@@ -81,8 +81,7 @@ export function downloadCanvas() {
     const date = new Date();
     const iso = date.toISOString().split('T')[0];
     const time = `${date.getHours()}-${date.getMinutes()}-${date.getSeconds()}`;
-
-    link.download = `doodl-${iso}-${time}.png`;
+    link.download = `doodle-${iso}-${time}.png`;
     link.href = dataUrl;
     document.body.appendChild(link);
     link.click();
