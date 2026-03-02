@@ -1,6 +1,7 @@
 import { appState } from '../core/appState';
 import { CURSOR_SMOOTHING_BUFFER_SIZE, CURSOR_DEAD_ZONE, FIST_ARC_COLOR, FIST_HOLD_TIME, SMOOTHING_BUFFER_SIZE } from '../constants';
 import { Point2D } from '../types';
+import { calculateWeightedAverage } from '../utils/math';
 
 let cursorBuffer: Point2D[] = [];
 let displayedCursorX = 0;
@@ -9,17 +10,6 @@ let fingerCursor: HTMLElement;
 
 export function initHandVisualizer() {
     fingerCursor = document.getElementById('fingerCursor')!;
-}
-
-function calculateWeightedAverage(buffer: Point2D[]): Point2D {
-    let totalWeight = 0, smoothX = 0, smoothY = 0;
-    buffer.forEach((pos, i) => {
-        const weight = i + 1;
-        smoothX += pos.x * weight;
-        smoothY += pos.y * weight;
-        totalWeight += weight;
-    });
-    return { x: smoothX / totalWeight, y: smoothY / totalWeight };
 }
 
 export function getSmoothedPosition(buffer: Point2D[], rawX: number, rawY: number): Point2D {

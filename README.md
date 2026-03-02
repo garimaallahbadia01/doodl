@@ -12,7 +12,7 @@ It uses Google's MediaPipe for real-time hand tracking and translates your physi
 - **Adjustable Brush:** Change your stroke thickness (and eraser size!) easily with a UI slider.
 - **No Heavy Install:** MediaPipe runs entirely in your browser via a fast CDN, keeping the local repository extremely lightweight.
 
----
+
 
 ## The Gestures
 

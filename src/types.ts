@@ -16,7 +16,6 @@ export interface HandState {
 export type Mode = 'DRAW' | 'ERASE';
 
 export type PoseMode =
-    | 'PINCH'
     | 'POINT'
     | 'TWO_FINGERS'
     | 'THUMBS_UP'

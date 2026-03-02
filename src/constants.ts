@@ -1,14 +1,23 @@
+// ----------------------------------------------------
+// Core Gesture Recognition Thresholds
+// ----------------------------------------------------
 export const PINCH_START_THRESHOLD = 0.16;
 export const PINCH_END_THRESHOLD = 0.22;
 export const MIN_MOVE_THRESHOLD = 5;
 export const SMOOTHING_BUFFER_SIZE = 10;
 export const DOT_HOLD_TIME = 200;
 
+// ----------------------------------------------------
+// UI Rendering & Smoothing Bounds
+// ----------------------------------------------------
 export const STROKE_WIDTH_DEFAULT = 3;
 export const STROKE_WIDTH_MIN = 1;
 export const STROKE_WIDTH_MAX = 20;
 export const ERASER_WIDTH_SCALE = 10;
 
+// ----------------------------------------------------
+// Advanced Kinematic and Timing Settings
+// ----------------------------------------------------
 export const EXTENSION_RATIO = 1.2;
 export const FAST_MOVEMENT_THRESHOLD = 600;
 export const PALM_HISTORY_SIZE = 6;
@@ -22,6 +31,9 @@ export const PICKER_COLORS = [
     '#FFCC00', '#34C759', '#007AFF', '#AF52DE'
 ];
 
+// ----------------------------------------------------
+// Undo/Redo Timing Limits
+// ----------------------------------------------------
 export const UNDO_REPEAT_DELAY = 500;
 export const UNDO_REPEAT_INTERVAL = 300;
 export const UNDO_HISTORY_LIMIT = 10;

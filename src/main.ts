@@ -9,6 +9,7 @@ import { initHandVisualizer, getSmoothedPosition, updateCursor, getSkeletonColor
 import { DrawingUtils, HandLandmarker } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs';
 import { PALM_HOLD_TIME, FIST_HOLD_TIME, UNDO_REPEAT_DELAY, UNDO_REPEAT_INTERVAL } from './constants';
 import { setupDraggablePIP } from './ui/uiComponents';
+import { initCameraManager, requestCameraAccess, isCameraActive } from './core/cameraManager';
 
 let video: HTMLVideoElement;
 let skeletonCanvas: HTMLCanvasElement;
@@ -20,7 +21,6 @@ let statusText: HTMLElement;
 let loadingOverlay: HTMLElement;
 let drawingUtils: DrawingUtils | null = null;
 
-let isCameraActive = true;
 let previousPose = 'NEUTRAL';
 let wasPinching = false;
 let lastTimestamp = -1;
@@ -246,47 +246,8 @@ async function init() {
 
         window.addEventListener('resize', resizeCanvases);
 
-        const cameraBtn = document.getElementById('cameraBtn')!;
-        cameraBtn.addEventListener('click', async () => {
-            isCameraActive = !isCameraActive;
-            if (isCameraActive) {
-                cameraBtn.textContent = 'Cam On';
-                cameraBtn.classList.add('active');
-                statusText.textContent = 'Requesting camera...';
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({
-                        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
-                    });
-                    video.srcObject = stream;
-                    await video.play();
-                    statusText.textContent = 'Hand Tracking Active';
-                    statusDot.classList.add('detected');
-                } catch (e: any) {
-                    statusText.textContent = 'Error: ' + e.message;
-                }
-            } else {
-                cameraBtn.textContent = 'Cam Off';
-                cameraBtn.classList.remove('active');
-                const stream = video.srcObject as MediaStream;
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                }
-                video.srcObject = null;
-                statusText.textContent = 'Camera Off';
-                statusDot.classList.remove('detected');
-                skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
-                document.getElementById('fingerCursor')!.style.display = 'none';
-                if (appState.wasPointing) { endStroke(); appState.wasPointing = false; }
-                updateFistProgress({ x: 0, y: 0 }, 0);
-            }
-        });
-
-        statusText.textContent = 'Requesting camera...';
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
-        });
-        video.srcObject = stream;
-        await video.play();
+        initCameraManager(video, statusDot, statusText, skeletonCanvas, skeletonCtx);
+        await requestCameraAccess();
 
         resizeCanvases();
 
