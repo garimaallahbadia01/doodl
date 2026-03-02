@@ -26,8 +26,6 @@ let wasPinching = false;
 let lastTimestamp = -1;
 
 function resizeCanvases() {
-    skeletonCanvas.width = 220;
-    skeletonCanvas.height = 165;
 
     const w = window.innerWidth;
     const h = window.innerHeight;
@@ -242,7 +240,13 @@ async function init() {
         initDrawingState(drawingCanvas);
         initUIComponents();
         initHandVisualizer();
-        setupDraggablePIP(document.getElementById('pipPanel')!);
+        const pipPanel = document.getElementById('pipPanel')!;
+        setupDraggablePIP(pipPanel);
+        new ResizeObserver(() => {
+            if (!skeletonCanvas || !pipPanel) return;
+            skeletonCanvas.width = pipPanel.clientWidth;
+            skeletonCanvas.height = pipPanel.clientHeight;
+        }).observe(pipPanel);
 
         window.addEventListener('resize', resizeCanvases);
 

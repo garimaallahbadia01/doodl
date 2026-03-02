@@ -244,10 +244,13 @@ export function setupDraggablePIP(el: HTMLElement) {
     let dragStartX: number, dragStartY: number, pipStartLeft: number, pipStartTop: number;
 
     el.addEventListener('mousedown', (e) => {
+        const rect = el.getBoundingClientRect();
+        if (e.clientX > rect.right - 24 && e.clientY > rect.bottom - 24) {
+            return; // Allow native CSS resize instead of drag
+        }
         isDragging = true;
         dragStartX = e.clientX;
         dragStartY = e.clientY;
-        const rect = el.getBoundingClientRect();
         pipStartLeft = rect.left;
         pipStartTop = rect.top;
         el.classList.add('dragging');
