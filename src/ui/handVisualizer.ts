@@ -11,10 +11,7 @@ export function initHandVisualizer() {
     fingerCursor = document.getElementById('fingerCursor')!;
 }
 
-export function getSmoothedPosition(buffer: Point2D[], rawX: number, rawY: number): Point2D {
-    buffer.push({ x: rawX, y: rawY });
-    if (buffer.length > SMOOTHING_BUFFER_SIZE) buffer.shift();
-
+function calculateWeightedAverage(buffer: Point2D[]): Point2D {
     let totalWeight = 0, smoothX = 0, smoothY = 0;
     buffer.forEach((pos, i) => {
         const weight = i + 1;
@@ -23,6 +20,12 @@ export function getSmoothedPosition(buffer: Point2D[], rawX: number, rawY: numbe
         totalWeight += weight;
     });
     return { x: smoothX / totalWeight, y: smoothY / totalWeight };
+}
+
+export function getSmoothedPosition(buffer: Point2D[], rawX: number, rawY: number): Point2D {
+    buffer.push({ x: rawX, y: rawY });
+    if (buffer.length > SMOOTHING_BUFFER_SIZE) buffer.shift();
+    return calculateWeightedAverage(buffer);
 }
 
 export function updateCursor(fingerPos: Point2D, pose: string, fistHoldStart: number) {
@@ -38,15 +41,9 @@ export function updateCursor(fingerPos: Point2D, pose: string, fistHoldStart: nu
         cursorBuffer.push({ x: fingerPos.x, y: fingerPos.y });
         if (cursorBuffer.length > CURSOR_SMOOTHING_BUFFER_SIZE) cursorBuffer.shift();
 
-        let totalWeight = 0, csX = 0, csY = 0;
-        cursorBuffer.forEach((pos, i) => {
-            const w = i + 1;
-            csX += pos.x * w;
-            csY += pos.y * w;
-            totalWeight += w;
-        });
-        const smoothX = csX / totalWeight;
-        const smoothY = csY / totalWeight;
+        const smoothed = calculateWeightedAverage(cursorBuffer);
+        const smoothX = smoothed.x;
+        const smoothY = smoothed.y;
 
         if (Math.hypot(smoothX - displayedCursorX, smoothY - displayedCursorY) > CURSOR_DEAD_ZONE) {
             displayedCursorX = smoothX;

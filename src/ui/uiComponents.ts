@@ -18,7 +18,7 @@ let clearFlashEl: HTMLElement;
 let fistProgressEl: HTMLCanvasElement;
 let fistCtx: CanvasRenderingContext2D;
 
-let showStatusTimeout: any = null;
+let showStatusTimeout: ReturnType<typeof setTimeout> | null = null;
 
 export function initUIComponents() {
     colorPickerEl = document.getElementById('colorPicker')!;
@@ -206,7 +206,9 @@ export function showUndoRedoStatus(msg: string) {
     if (!undoRedoStatus) return;
     undoRedoStatus.textContent = msg;
     undoRedoStatus.classList.add('visible');
-    clearTimeout(showStatusTimeout);
+    if (showStatusTimeout !== null) {
+        clearTimeout(showStatusTimeout);
+    }
     showStatusTimeout = setTimeout(() => undoRedoStatus.classList.remove('visible'), 1000);
 }
 

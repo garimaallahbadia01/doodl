@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Doodl</title>
     <link rel="stylesheet" href="/src/ui/styles.css">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -14,13 +14,13 @@
         <div id="container">
             <!-- Panel A: Drawing Canvas (Main Stage) -->
             <div id="drawingPanel">
-                <canvas id="drawingCanvas"></canvas>
+                <canvas id="drawingCanvas" role="img" aria-label="Interactive drawing canvas"></canvas>
             </div>
 
             <!-- Panel B: Camera PIP (Bottom Right) -->
             <div id="pipPanel">
                 <video id="webcam" autoplay playsinline></video>
-                <canvas id="skeletonCanvas"></canvas>
+                <canvas id="skeletonCanvas" role="img" aria-label="Hand tracking skeleton visualization"></canvas>
             </div>
 
             <!-- Layer: Finger Cursor -->

@@ -1,7 +1,7 @@
 // @ts-ignore
 import { FilesetResolver, HandLandmarker } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs';
 
-export let handLandmarker: any = null;
+export let handLandmarker: HandLandmarker | null = null;
 
 export async function initHandTracking() {
     const vision = await FilesetResolver.forVisionTasks(

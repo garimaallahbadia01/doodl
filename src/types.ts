@@ -30,4 +30,15 @@ export interface AppState {
     currentColorIndex: number;
     currentMode: Mode;
     currentStrokeWidth: number;
+    isColorPickerOpen: boolean;
+    highlightedSwatchIdx: number;
+    pickerAnchor: Point2D;
+    wasPinching: boolean;
+    wasPointing: boolean;
+    palmHoldStart: number;
+    fistHoldStart: number;
+    undoHoldStart: number;
+    lastUndoTime: number;
+    redoHoldStart: number;
+    lastRedoTime: number;
 }

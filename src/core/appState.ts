@@ -1,7 +1,7 @@
-import { Mode } from '../types';
+import { Mode, AppState } from '../types';
 import { STROKE_WIDTH_DEFAULT } from '../constants';
 
-export const appState = {
+export const appState: AppState = {
     currentColor: '#000000',
     currentColorIndex: 0,
     currentMode: 'DRAW' as Mode,

@@ -140,13 +140,14 @@ function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
 }
 
 function processResults(results: any) {
+    skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
+
     if (!drawingUtils) {
         console.warn('drawingUtils not ready yet');
         return;
     }
 
     skeletonCtx.save();
-    skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
 
     if (!results.landmarks || results.landmarks.length === 0) {
         statusDot.classList.remove('detected');
