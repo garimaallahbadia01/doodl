@@ -1,11 +1,14 @@
 import { UNDO_HISTORY_LIMIT } from '../constants';
 import { flashAction, showUndoRedoStatus } from '../ui/uiComponents';
+import { Stroke } from '../types';
+import { appState } from '../core/appState';
 
 export let drawingCanvas: HTMLCanvasElement;
 export let drawingCtx: CanvasRenderingContext2D;
 
-export let undoStack: ImageData[] = [];
-export let redoStack: ImageData[] = [];
+export let undoStack: Stroke[] = [];
+export let redoStack: Stroke[] = [];
+export let currentStroke: Stroke | null = null;
 
 export function initDrawingState(canvas: HTMLCanvasElement) {
     drawingCanvas = canvas;
@@ -14,26 +17,62 @@ export function initDrawingState(canvas: HTMLCanvasElement) {
 
 export function saveCanvasState() {
     if (!drawingCtx || !drawingCanvas) return;
-    try {
-        undoStack.push(drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height));
+    currentStroke = {
+        mode: appState.currentMode,
+        color: appState.currentColor,
+        width: appState.currentStrokeWidth,
+        segments: []
+    };
+    redoStack = [];
+}
+
+export function commitStroke() {
+    if (currentStroke && (currentStroke.segments.length > 0 || currentStroke.dot || currentStroke.type === 'clear')) {
+        undoStack.push(currentStroke);
         if (undoStack.length > UNDO_HISTORY_LIMIT) {
             undoStack.shift();
         }
-        redoStack = [];
-    } catch (e) {
-        console.warn('Undo snapshot failed (memory):', e);
+    }
+    currentStroke = null;
+}
+
+function redrawAll() {
+    drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+    for (const stroke of undoStack) {
+        if (stroke.type === 'clear') {
+            drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+            continue;
+        }
+
+        drawingCtx.save();
+        drawingCtx.globalCompositeOperation = stroke.mode === 'ERASE' ? 'destination-out' : 'source-over';
+        drawingCtx.strokeStyle = stroke.mode === 'ERASE' ? '#000' : stroke.color;
+        drawingCtx.lineWidth = stroke.width;
+        drawingCtx.lineCap = 'round';
+        drawingCtx.lineJoin = 'round';
+
+        if (stroke.dot) {
+            drawingCtx.beginPath();
+            drawingCtx.arc(stroke.dot.x, stroke.dot.y, stroke.width / 2, 0, Math.PI * 2);
+            drawingCtx.fillStyle = drawingCtx.strokeStyle;
+            drawingCtx.fill();
+        } else if (stroke.segments.length > 0) {
+            drawingCtx.beginPath();
+            for (let i = 0; i < stroke.segments.length; i++) {
+                const seg = stroke.segments[i];
+                if (i === 0) drawingCtx.moveTo(seg.lastMidX, seg.lastMidY);
+                drawingCtx.quadraticCurveTo(seg.prevX, seg.prevY, seg.midX, seg.midY);
+            }
+            drawingCtx.stroke();
+        }
+        drawingCtx.restore();
     }
 }
 
 export function performUndo() {
     if (undoStack.length > 0) {
-        try {
-            redoStack.push(drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height));
-            const previous = undoStack.pop();
-            if (previous) drawingCtx.putImageData(previous, 0, 0);
-        } catch (e) {
-            console.warn('Undo snapshot failed (memory):', e);
-        }
+        redoStack.push(undoStack.pop()!);
+        redrawAll();
         flashAction('undo');
     } else {
         showUndoRedoStatus('Nothing to undo');
@@ -42,13 +81,8 @@ export function performUndo() {
 
 export function performRedo() {
     if (redoStack.length > 0) {
-        try {
-            undoStack.push(drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height));
-            const next = redoStack.pop();
-            if (next) drawingCtx.putImageData(next, 0, 0);
-        } catch (e) {
-            console.warn('Undo snapshot failed (memory):', e);
-        }
+        undoStack.push(redoStack.pop()!);
+        redrawAll();
         flashAction('redo');
     } else {
         showUndoRedoStatus('Nothing to redo');
@@ -56,7 +90,7 @@ export function performRedo() {
 }
 
 export function clearCanvas() {
-    saveCanvasState();
+    undoStack.push({ type: 'clear', mode: 'DRAW', color: '', width: 0, segments: [] });
     drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
 }
 

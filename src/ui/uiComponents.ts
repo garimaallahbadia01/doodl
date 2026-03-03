@@ -97,8 +97,7 @@ export function openColorPicker(fingerPos: { x: number, y: number }) {
     appState.isColorPickerOpen = true;
     appState.pickerAnchor = { x: fingerPos.x, y: fingerPos.y };
     if (colorPickerEl) {
-        colorPickerEl.style.left = `${appState.pickerAnchor.x}px`;
-        colorPickerEl.style.top = `${appState.pickerAnchor.y}px`;
+        colorPickerEl.style.transform = `translate(${appState.pickerAnchor.x}px, ${appState.pickerAnchor.y}px)`;
         colorPickerEl.classList.add('visible');
         Array.from(colorPickerEl.children).forEach(s => s.classList.remove('highlighted'));
     }
@@ -225,8 +224,7 @@ export function updateFistProgress(fingerPos: { x: number, y: number }, fistHold
     }
     const progress = Math.min((performance.now() - fistHoldStart) / FIST_HOLD_TIME, 1);
     fistProgressEl.classList.add('visible');
-    fistProgressEl.style.left = `${fingerPos.x - 24}px`;
-    fistProgressEl.style.top = `${fingerPos.y - 24}px`;
+    fistProgressEl.style.transform = `translate(${fingerPos.x - 24}px, ${fingerPos.y - 24}px)`;
 
     fistCtx.clearRect(0, 0, 48, 48);
     fistCtx.strokeStyle = FIST_ARC_COLOR;

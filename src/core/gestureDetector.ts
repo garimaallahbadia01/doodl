@@ -1,9 +1,10 @@
 import { PoseMode, Point2D } from '../types';
-import { PINCH_START_THRESHOLD, PINCH_END_THRESHOLD, INDEX_EXTENSION_RATIO, OTHERS_EXTENSION_RATIO, FAST_MOVEMENT_THRESHOLD, PALM_HISTORY_SIZE, PALM_STABILITY_THRESHOLD } from '../constants';
+import { PINCH_START_THRESHOLD, PINCH_END_THRESHOLD, PINCH_RELEASE_TIMEOUT, INDEX_EXTENSION_RATIO, OTHERS_EXTENSION_RATIO, FAST_MOVEMENT_THRESHOLD, PALM_HISTORY_SIZE, PALM_STABILITY_THRESHOLD } from '../constants';
 
 export let handVelocity = { x: 0, y: 0 };
 export let palmHistory: Point2D[] = [];
 export let isPinching = false;
+let pinchReleaseStartTime = 0;
 let lastPalmCenter: Point2D | null = null;
 let lastFrameTime = 0;
 let poseHistory: PoseMode[] = [];
@@ -61,34 +62,46 @@ export function getHandPose(landmarks: any[]): PoseMode {
     return rawPose;
 }
 
-export function getPalmCenter(landmarks: any[]): Point2D {
+export function updatePalmCenter(landmarks: any[], outPoint: Point2D) {
     const w = landmarks[0], i = landmarks[5], p = landmarks[17];
-    return { x: (w.x + i.x + p.x) / 3, y: (w.y + i.y + p.y) / 3 };
+    outPoint.x = (w.x + i.x + p.x) / 3;
+    outPoint.y = (w.y + i.y + p.y) / 3;
 }
+
+const tempCenter = { x: 0, y: 0 };
 
 export function updateVelocity(landmarks: any[]) {
     const now = performance.now();
     const dt = (now - lastFrameTime) / 1000;
     lastFrameTime = now;
 
-    const center = getPalmCenter(landmarks);
+    updatePalmCenter(landmarks, tempCenter);
     if (lastPalmCenter && dt > 0) {
-        handVelocity = {
-            x: (center.x - lastPalmCenter.x) / dt,
-            y: (center.y - lastPalmCenter.y) / dt
-        };
+        handVelocity.x = (tempCenter.x - lastPalmCenter.x) / dt;
+        handVelocity.y = (tempCenter.y - lastPalmCenter.y) / dt;
+    } else if (!lastPalmCenter) {
+        lastPalmCenter = { x: 0, y: 0 };
     }
-    lastPalmCenter = center;
+    lastPalmCenter.x = tempCenter.x;
+    lastPalmCenter.y = tempCenter.y;
 }
 
 export function isHandMovingFast() {
     return Math.hypot(handVelocity.x, handVelocity.y) > FAST_MOVEMENT_THRESHOLD;
 }
 
+const tempCenterStable = { x: 0, y: 0 };
+
 export function isPalmStable(landmarks: any[]) {
-    const center = getPalmCenter(landmarks);
-    palmHistory.push(center);
-    if (palmHistory.length > PALM_HISTORY_SIZE) palmHistory.shift();
+    updatePalmCenter(landmarks, tempCenterStable);
+    if (palmHistory.length >= PALM_HISTORY_SIZE) {
+        const oldest = palmHistory.shift()!;
+        oldest.x = tempCenterStable.x;
+        oldest.y = tempCenterStable.y;
+        palmHistory.push(oldest);
+    } else {
+        palmHistory.push({ x: tempCenterStable.x, y: tempCenterStable.y });
+    }
     if (palmHistory.length < 3) return false;
 
     const first = palmHistory[0];
@@ -111,13 +124,22 @@ export function detectPinch(landmarks: any[]) {
 
     if (!isPinching && normalizedPinch < PINCH_START_THRESHOLD) {
         isPinching = true;
+        pinchReleaseStartTime = 0;
     } else if (isPinching && normalizedPinch > PINCH_END_THRESHOLD) {
-        isPinching = false;
+        if (pinchReleaseStartTime === 0) {
+            pinchReleaseStartTime = performance.now();
+        } else if (performance.now() - pinchReleaseStartTime > PINCH_RELEASE_TIMEOUT) {
+            isPinching = false;
+            pinchReleaseStartTime = 0;
+        }
+    } else if (isPinching && normalizedPinch <= PINCH_END_THRESHOLD) {
+        pinchReleaseStartTime = 0;
     }
 }
 
 export function resetPinchState() {
     isPinching = false;
+    pinchReleaseStartTime = 0;
 }
 
 export function emptyPalmHistory() {

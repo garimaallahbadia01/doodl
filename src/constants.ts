@@ -2,7 +2,8 @@
 // Core Gesture Recognition Thresholds
 // ----------------------------------------------------
 export const PINCH_START_THRESHOLD = 0.16;
-export const PINCH_END_THRESHOLD = 0.22;
+export const PINCH_END_THRESHOLD = 0.28;
+export const PINCH_RELEASE_TIMEOUT = 120;
 export const MIN_MOVE_THRESHOLD = 5;
 export const SMOOTHING_BUFFER_SIZE = 10;
 export const DOT_HOLD_TIME = 200;

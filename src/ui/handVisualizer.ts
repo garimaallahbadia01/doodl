@@ -41,8 +41,7 @@ export function updateCursor(fingerPos: Point2D, pose: string, fistHoldStart: nu
         }
     }
 
-    fingerCursor.style.left = `${displayedCursorX}px`;
-    fingerCursor.style.top = `${displayedCursorY}px`;
+    fingerCursor.style.transform = `translate(${displayedCursorX}px, ${displayedCursorY}px)`;
 
     fingerCursor.classList.remove('drawing', 'erasing', 'picking', 'fist-hold', 'pinching');
     fingerCursor.style.width = '';

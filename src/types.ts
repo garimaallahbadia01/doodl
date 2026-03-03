@@ -41,3 +41,18 @@ export interface AppState {
     redoHoldStart: number;
     lastRedoTime: number;
 }
+
+export interface StrokeSegment {
+    prevX: number; prevY: number;
+    midX: number; midY: number;
+    lastMidX: number; lastMidY: number;
+}
+
+export interface Stroke {
+    type?: 'clear';
+    mode: Mode;
+    color: string;
+    width: number;
+    segments: StrokeSegment[];
+    dot?: Point2D;
+}

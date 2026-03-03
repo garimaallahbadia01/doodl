@@ -1,6 +1,6 @@
 import { HandState } from '../types';
 import { MIN_MOVE_THRESHOLD, DOT_HOLD_TIME, ERASER_WIDTH_SCALE } from '../constants';
-import { drawingCtx } from './drawingState';
+import { drawingCtx, currentStroke, commitStroke } from './drawingState';
 import { appState } from '../core/appState';
 
 export const handState: HandState = {
@@ -55,6 +55,11 @@ export function drawStroke(currX: number, currY: number) {
                 drawingCtx.restore();
                 drawingCtx.globalCompositeOperation = 'source-over';
                 handState.dotDrawn = true;
+
+                if (currentStroke) {
+                    currentStroke.dot = { x: currX, y: currY };
+                    currentStroke.width = width;
+                }
             }
         }
         return;
@@ -83,6 +88,15 @@ export function drawStroke(currX: number, currY: number) {
     drawingCtx.restore();
     drawingCtx.globalCompositeOperation = 'source-over';
 
+    if (currentStroke) {
+        currentStroke.segments.push({
+            prevX: handState.prevX, prevY: handState.prevY,
+            midX, midY,
+            lastMidX: handState.lastMidX || handState.prevX,
+            lastMidY: handState.lastMidY || handState.prevY
+        });
+    }
+
     handState.prevX = currX;
     handState.prevY = currY;
     handState.lastMidX = midX;
@@ -98,4 +112,5 @@ export function endStroke() {
     handState.lastMidY = null;
     handState.holdStart = null;
     handState.dotDrawn = false;
+    commitStroke();
 }
