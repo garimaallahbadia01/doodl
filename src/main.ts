@@ -168,13 +168,12 @@ function processResults(results: any) {
     statusDot.classList.remove('poor-light');
     statusDot.classList.add('detected');
 
-    const isOutOfBounds = results.landmarks[0].some((lm: any) =>
-        lm.x < 0.05 || lm.x > 0.95 || lm.y < 0.05 || lm.y > 0.95
-    );
+    const centerLm = results.landmarks[0][9]; // Middle finger MCP (hand center)
+    const isOutOfBounds = centerLm.x < 0.01 || centerLm.x > 0.99 || centerLm.y < 0.01 || centerLm.y > 0.99;
 
     if (results.handednesses && results.handednesses.length > 0) {
         const conf = results.handednesses[0][0].score;
-        if (conf < 0.85) {
+        if (conf < 0.65) {
             statusDot.classList.add('poor-light');
             statusText.textContent = 'Poor lighting or dirty lens';
         } else if (isOutOfBounds) {
