@@ -1,4 +1,4 @@
-export const handWorker = new Worker(new URL('./handWorker.ts', import.meta.url), { type: 'module' });
+export const handWorker = new Worker('/handWorker.js');
 let initPromise: Promise<void> | null = null;
 
 export async function initHandTracking() {

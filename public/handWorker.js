@@ -1,4 +1,6 @@
-let handLandmarker: any = null;
+importScripts('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js');
+
+let handLandmarker = null;
 let isInitializing = false;
 
 self.onmessage = async (e) => {
@@ -11,11 +13,6 @@ self.onmessage = async (e) => {
 
         try {
             self.postMessage({ type: 'LOG', msg: 'Fetching Wasm...' });
-
-            // Bypass Vite's worker transpiler (which breaks dynamic imports via self.import)
-            const { FilesetResolver, HandLandmarker } = await new Function(
-                `return import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs')`
-            )();
 
             const vision = await FilesetResolver.forVisionTasks(
                 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
@@ -36,7 +33,7 @@ self.onmessage = async (e) => {
             self.postMessage({ type: 'LOG', msg: 'Landmarker initialized successfully' });
             self.postMessage({ type: 'INIT_DONE' });
         } catch (error) {
-            self.postMessage({ type: 'INIT_ERROR', error });
+            self.postMessage({ type: 'INIT_ERROR', error: error.message });
         }
     } else if (data.type === 'PROCESS' && handLandmarker) {
         if (!data.frame) return;
