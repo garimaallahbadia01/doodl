@@ -1,4 +1,4 @@
-importScripts('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js');
+importScripts('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle_umd.js');
 
 let handLandmarker = null;
 let isInitializing = false;
