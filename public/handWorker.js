@@ -1,4 +1,4 @@
-importScripts('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle_umd.js');
+importScripts('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.js');
 
 let handLandmarker = null;
 let isInitializing = false;
@@ -15,7 +15,7 @@ self.onmessage = async (e) => {
             self.postMessage({ type: 'LOG', msg: 'Fetching Wasm...' });
 
             const vision = await FilesetResolver.forVisionTasks(
-                'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+                'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
             );
             self.postMessage({ type: 'LOG', msg: 'Wasm loaded, creating landmarker...' });
 
