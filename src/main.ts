@@ -23,7 +23,6 @@ let drawingUtils: DrawingUtils | null = null;
 
 let previousPose = 'NEUTRAL';
 let wasPinching = false;
-let lastTimestamp = -1;
 let isProcessingFrame = false;
 
 function resizeCanvases() {
@@ -239,7 +238,6 @@ function detectLoop() {
     if (isProcessingFrame) return;
 
     const nowMs = performance.now();
-    lastTimestamp = nowMs;
     isProcessingFrame = true;
 
     createImageBitmap(video).then(bmp => {

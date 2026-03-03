@@ -1,3 +1,4 @@
+// @ts-ignore
 import { FilesetResolver, HandLandmarker } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs';
 
 let handLandmarker: HandLandmarker | null = null;
