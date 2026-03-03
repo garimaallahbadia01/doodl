@@ -47,11 +47,15 @@ function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
 
     // -- Open Palm + stable -> Toggle Mode --
     if (pose === 'OPEN_PALM' && isPalmStable(landmarks)) {
-        if (appState.palmHoldStart === 0) appState.palmHoldStart = performance.now();
-        if (performance.now() - appState.palmHoldStart >= PALM_HOLD_TIME) {
-            setMode(appState.currentMode === 'DRAW' ? 'ERASE' : 'DRAW');
-            appState.palmHoldStart = 0;
-            palmHistory.length = 0; // Empty
+        if (appState.palmHoldStart === -1) {
+            // Already triggered, wait until they break the pose
+        } else {
+            if (appState.palmHoldStart === 0) appState.palmHoldStart = performance.now();
+            if (performance.now() - appState.palmHoldStart >= PALM_HOLD_TIME) {
+                setMode(appState.currentMode === 'DRAW' ? 'ERASE' : 'DRAW');
+                appState.palmHoldStart = -1; // Lock until pose changes
+                palmHistory.length = 0; // Empty
+            }
         }
     } else if (pose !== 'OPEN_PALM') {
         appState.palmHoldStart = 0;
@@ -60,11 +64,16 @@ function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
 
     // -- Fist held -> Clear Canvas --
     if (pose === 'FIST') {
-        if (appState.fistHoldStart === 0) appState.fistHoldStart = performance.now();
-        updateFistProgress(fingerPos, appState.fistHoldStart);
-        if (performance.now() - appState.fistHoldStart >= FIST_HOLD_TIME) {
-            clearCanvasWithFlash();
-            appState.fistHoldStart = 0;
+        if (appState.fistHoldStart === -1) {
+            // Already cleared, hide cursor and wait for release
+            updateFistProgress(fingerPos, 0);
+        } else {
+            if (appState.fistHoldStart === 0) appState.fistHoldStart = performance.now();
+            updateFistProgress(fingerPos, appState.fistHoldStart);
+            if (performance.now() - appState.fistHoldStart >= FIST_HOLD_TIME) {
+                clearCanvasWithFlash();
+                appState.fistHoldStart = -1; // Lock until fist is opened
+            }
         }
     } else {
         appState.fistHoldStart = 0;
