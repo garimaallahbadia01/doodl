@@ -6,13 +6,20 @@ export async function initHandTracking() {
 
     initPromise = new Promise((resolve, reject) => {
         const initListener = (e: MessageEvent) => {
-            if (e.data.type === 'INIT_DONE') {
+            if (e.data.type === 'LOG') {
+                console.log('[Worker]:', e.data.msg);
+            } else if (e.data.type === 'INIT_DONE') {
                 handWorker.removeEventListener('message', initListener);
                 resolve();
             } else if (e.data.type === 'INIT_ERROR') {
                 handWorker.removeEventListener('message', initListener);
                 reject(e.data.error);
             }
+        };
+
+        handWorker.onerror = (err) => {
+            console.error("Worker generic error:", err);
+            reject(new Error(err.message || 'Worker thread crashed'));
         };
 
         handWorker.addEventListener('message', initListener);

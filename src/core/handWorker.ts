@@ -8,18 +8,21 @@ self.onmessage = async (e) => {
     const data = e.data;
 
     if (data.type === 'INIT') {
+        self.postMessage({ type: 'LOG', msg: 'Worker triggered INIT...' });
         if (isInitializing || handLandmarker) return;
         isInitializing = true;
 
         try {
+            self.postMessage({ type: 'LOG', msg: 'Fetching Wasm...' });
             const vision = await FilesetResolver.forVisionTasks(
                 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
             );
+            self.postMessage({ type: 'LOG', msg: 'Wasm loaded, creating landmarker...' });
 
             handLandmarker = await HandLandmarker.createFromOptions(vision, {
                 baseOptions: {
                     modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
-                    delegate: 'GPU'
+                    delegate: 'CPU'
                 },
                 runningMode: 'VIDEO',
                 numHands: 2,
@@ -27,6 +30,7 @@ self.onmessage = async (e) => {
                 minHandPresenceConfidence: 0.5,
                 minTrackingConfidence: 0.5
             });
+            self.postMessage({ type: 'LOG', msg: 'Landmarker initialized successfully' });
             self.postMessage({ type: 'INIT_DONE' });
         } catch (error) {
             self.postMessage({ type: 'INIT_ERROR', error });
