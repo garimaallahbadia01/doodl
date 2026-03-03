@@ -12,8 +12,10 @@ self.onmessage = async (e) => {
         try {
             self.postMessage({ type: 'LOG', msg: 'Fetching Wasm...' });
 
-            // @ts-ignore
-            const { FilesetResolver, HandLandmarker } = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs');
+            // Bypass Vite's worker transpiler (which breaks dynamic imports via self.import)
+            const { FilesetResolver, HandLandmarker } = await new Function(
+                `return import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs')`
+            )();
 
             const vision = await FilesetResolver.forVisionTasks(
                 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
