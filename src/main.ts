@@ -1,4 +1,4 @@
-import { initHandTracking, handWorker } from './core/handTracking';
+import { initHandTracking, detectHand, handLandmarker } from './core/handTracking';
 import { getHandPose, updateVelocity, isHandMovingFast, detectPinch, isPalmStable, isPinching, palmHistory } from './core/gestureDetector';
 import { drawStroke, endStroke, handState } from './drawing/drawingCanvas';
 import { initDrawingState, saveCanvasState, performUndo, performRedo } from './drawing/drawingState';
@@ -23,7 +23,7 @@ let drawingUtils: DrawingUtils | null = null;
 
 let previousPose = 'NEUTRAL';
 let wasPinching = false;
-let isProcessingFrame = false;
+let lastTimestamp = -1;
 
 function resizeCanvases() {
 
@@ -230,23 +230,23 @@ function processResults(results: any) {
 }
 
 function detectLoop() {
-    if (!isCameraActive || video.readyState < 2) {
+    if (!isCameraActive || !handLandmarker || video.readyState < 2) {
         requestAnimationFrame(detectLoop);
         return;
     }
 
-    if (isProcessingFrame) return;
-
     const nowMs = performance.now();
-    isProcessingFrame = true;
-
-    createImageBitmap(video).then(bmp => {
-        handWorker!.postMessage({ type: 'PROCESS', frame: bmp, timestamp: nowMs }, [bmp]);
-    }).catch(err => {
-        console.warn('Bitmap failed', err);
-        isProcessingFrame = false;
+    if (nowMs <= lastTimestamp) {
         requestAnimationFrame(detectLoop);
-    });
+        return;
+    }
+    lastTimestamp = nowMs;
+
+    const results = detectHand(video, nowMs);
+    if (results) {
+        processResults(results);
+    }
+    requestAnimationFrame(detectLoop);
 }
 
 async function init() {
@@ -287,15 +287,6 @@ async function init() {
         statusText.textContent = 'Hand Tracking Active';
 
         console.log('Doodle modular initialized successfully.');
-
-        handWorker!.onmessage = (e) => {
-            if (e.data.type === 'RESULTS') {
-                processResults(e.data.results);
-                isProcessingFrame = false;
-                requestAnimationFrame(detectLoop);
-            }
-        };
-
         requestAnimationFrame(detectLoop);
 
     } catch (err: any) {
