@@ -14,10 +14,10 @@ export async function initHandTracking() {
             delegate: 'GPU'
         },
         runningMode: 'VIDEO',
-        numHands: 2,
-        minHandDetectionConfidence: 0.5,
-        minHandPresenceConfidence: 0.5,
-        minTrackingConfidence: 0.5
+        numHands: 1,
+        minHandDetectionConfidence: 0.75,
+        minHandPresenceConfidence: 0.75,
+        minTrackingConfidence: 0.75
     });
 
     return handLandmarker;
