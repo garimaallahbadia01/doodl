@@ -1,7 +1,4 @@
-// @ts-ignore
-import { FilesetResolver, HandLandmarker } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs';
-
-let handLandmarker: HandLandmarker | null = null;
+let handLandmarker: any = null;
 let isInitializing = false;
 
 self.onmessage = async (e) => {
@@ -14,6 +11,10 @@ self.onmessage = async (e) => {
 
         try {
             self.postMessage({ type: 'LOG', msg: 'Fetching Wasm...' });
+
+            // @ts-ignore
+            const { FilesetResolver, HandLandmarker } = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs');
+
             const vision = await FilesetResolver.forVisionTasks(
                 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
             );
