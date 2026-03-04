@@ -30,7 +30,7 @@ export const FIST_ARC_COLOR = '#FF3333';
 export const MODE_BADGE_PULSE_DURATION = 200;
 export const PICKER_COLORS = [
     '#000000', '#FFFFFF', '#FF3B30', '#FF9500',
-    '#FFCC00', '#34C759', '#007AFF', '#AF52DE'
+    '#34C759', '#007AFF', '#AF52DE'
 ];
 
 // ----------------------------------------------------

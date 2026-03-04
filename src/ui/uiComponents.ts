@@ -1,41 +1,41 @@
 import { appState } from '../core/appState';
-import { PICKER_COLORS, COLOR_PICKER_RADIUS, SWATCH_HIT_RADIUS, MODE_BADGE_PULSE_DURATION, FIST_HOLD_TIME, FIST_ARC_COLOR } from '../constants';
-import { clearCanvas, downloadCanvas } from '../drawing/drawingState';
+import { PICKER_COLORS, COLOR_PICKER_RADIUS, SWATCH_HIT_RADIUS, FIST_HOLD_TIME, FIST_ARC_COLOR } from '../constants';
+import { clearCanvas, downloadCanvas, performUndo, performRedo } from '../drawing/drawingState';
 
 let colorPickerEl: HTMLElement;
-let modeBadge: HTMLElement;
-let badgeIconWrap: HTMLElement;
-let badgeLabel: HTMLElement;
 let eraserBtn: HTMLElement;
+let pencilBtn: HTMLElement;
 let clearBtn: HTMLElement;
 let gridBtn: HTMLElement;
 let drawingPanel: HTMLElement;
 let actionFlashEl: HTMLElement;
-let undoRedoStatus: HTMLElement;
 let brushSlider: HTMLInputElement;
 let brushPreviewDot: HTMLElement;
 let clearFlashEl: HTMLElement;
 let fistProgressEl: HTMLCanvasElement;
 let fistCtx: CanvasRenderingContext2D;
+let toastEl: HTMLElement;
+let undoBtn: HTMLElement;
+let redoBtn: HTMLElement;
 
-let showStatusTimeout: ReturnType<typeof setTimeout> | null = null;
+let toastTimeout: ReturnType<typeof setTimeout> | null = null;
 
 export function initUIComponents() {
     colorPickerEl = document.getElementById('colorPicker')!;
-    modeBadge = document.getElementById('modeBadge')!;
-    badgeIconWrap = document.getElementById('badgeIconWrap')!;
-    badgeLabel = document.getElementById('badgeLabel')!;
+    pencilBtn = document.getElementById('pencilBtn')!;
     eraserBtn = document.getElementById('eraserBtn')!;
     clearBtn = document.getElementById('clearBtn')!;
     gridBtn = document.getElementById('gridBtn')!;
     drawingPanel = document.getElementById('drawingPanel')!;
     actionFlashEl = document.getElementById('actionFlash')!;
-    undoRedoStatus = document.getElementById('undoRedoStatus')!;
     brushSlider = document.getElementById('brushSlider') as HTMLInputElement;
     brushPreviewDot = document.getElementById('brushPreviewDot')!;
     clearFlashEl = document.getElementById('clearFlash')!;
     fistProgressEl = document.getElementById('fistProgress') as HTMLCanvasElement;
     fistCtx = fistProgressEl.getContext('2d')!;
+    toastEl = document.getElementById('toast')!;
+    undoBtn = document.getElementById('undoBtn')!;
+    redoBtn = document.getElementById('redoBtn')!;
 
     buildPickerSwatches();
 
@@ -44,6 +44,11 @@ export function initUIComponents() {
     brushSlider.addEventListener('input', (e: any) => {
         appState.currentStrokeWidth = parseInt(e.target.value, 10);
         updateBrushPreview();
+    });
+
+    // Tool buttons
+    pencilBtn.addEventListener('click', () => {
+        setMode('DRAW');
     });
 
     eraserBtn.addEventListener('click', () => {
@@ -62,6 +67,31 @@ export function initUIComponents() {
     gridBtn.addEventListener('click', () => {
         drawingPanel.classList.toggle('grid-enabled');
         gridBtn.classList.toggle('active');
+    });
+
+    // Undo/Redo buttons
+    undoBtn.addEventListener('click', () => {
+        performUndo();
+    });
+
+    redoBtn.addEventListener('click', () => {
+        performRedo();
+    });
+
+    // Color swatches
+    document.querySelectorAll('.swatch').forEach(s => {
+        s.addEventListener('click', () => {
+            const el = s as HTMLElement;
+            const color = el.dataset.color;
+            if (color) {
+                appState.currentColor = color;
+                appState.currentColorIndex = PICKER_COLORS.indexOf(color);
+                syncToolbarSwatches();
+                if (appState.currentMode === 'ERASE') {
+                    setMode('DRAW');
+                }
+            }
+        });
     });
 }
 
@@ -153,41 +183,23 @@ export function syncToolbarSwatches() {
         const el = s as HTMLElement;
         el.classList.toggle('active', el.dataset.color === appState.currentColor);
     });
-    if (eraserBtn) eraserBtn.classList.remove('active');
 }
 
 export function setMode(mode: 'DRAW' | 'ERASE') {
     if (appState.currentMode === mode) return;
     appState.currentMode = mode;
-    if (eraserBtn) eraserBtn.classList.toggle('active', mode === 'ERASE');
+
+    // Update sidebar active states
+    if (pencilBtn && eraserBtn) {
+        pencilBtn.classList.toggle('active', mode === 'DRAW');
+        eraserBtn.classList.toggle('active', mode === 'ERASE');
+    }
+
     if (mode === 'DRAW') {
         syncToolbarSwatches();
     } else {
         document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
     }
-    updateModeBadge();
-    pulseBadge();
-}
-
-export function updateModeBadge() {
-    if (!modeBadge) return;
-    if (appState.currentMode === 'ERASE') {
-        badgeIconWrap.innerHTML = '<img src="/assets/icons/Group_10.svg" alt="Eraser" class="badge-icon">';
-        badgeLabel.textContent = 'Erase';
-        modeBadge.classList.add('erase-mode');
-    } else {
-        badgeIconWrap.textContent = '✏️';
-        badgeLabel.textContent = 'Draw';
-        modeBadge.classList.remove('erase-mode');
-    }
-}
-
-export function pulseBadge() {
-    if (!modeBadge) return;
-    modeBadge.classList.remove('pulse');
-    void modeBadge.offsetWidth;
-    modeBadge.classList.add('pulse');
-    setTimeout(() => modeBadge.classList.remove('pulse'), MODE_BADGE_PULSE_DURATION);
 }
 
 export function clearCanvasWithFlash() {
@@ -206,14 +218,30 @@ export function flashAction(type: string) {
     setTimeout(() => actionFlashEl.classList.remove('flash'), 150);
 }
 
-export function showUndoRedoStatus(msg: string) {
-    if (!undoRedoStatus) return;
-    undoRedoStatus.textContent = msg;
-    undoRedoStatus.classList.add('visible');
-    if (showStatusTimeout !== null) {
-        clearTimeout(showStatusTimeout);
+// ── Toast Notification System ──
+export function showToast(message: string, isWarning = false, duration = 3000) {
+    if (!toastEl) return;
+    toastEl.textContent = message;
+    toastEl.classList.remove('visible', 'warning');
+
+    if (isWarning) {
+        toastEl.classList.add('warning');
     }
-    showStatusTimeout = setTimeout(() => undoRedoStatus.classList.remove('visible'), 1000);
+
+    // Force reflow for re-trigger
+    void toastEl.offsetWidth;
+    toastEl.classList.add('visible');
+
+    if (toastTimeout !== null) {
+        clearTimeout(toastTimeout);
+    }
+    toastTimeout = setTimeout(() => {
+        toastEl.classList.remove('visible');
+    }, duration);
+}
+
+export function showUndoRedoStatus(msg: string) {
+    showToast(msg, false, 1200);
 }
 
 export function updateFistProgress(fingerPos: { x: number, y: number }, fistHoldStart: number) {

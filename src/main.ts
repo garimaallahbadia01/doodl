@@ -3,7 +3,7 @@ import { getHandPose, updateVelocity, isHandMovingFast, detectPinch, isPalmStabl
 import { drawStroke, endStroke, handState } from './drawing/drawingCanvas';
 import { initDrawingState, saveCanvasState, performUndo, performRedo } from './drawing/drawingState';
 import { appState } from './core/appState';
-import { initUIComponents, setMode, updateFistProgress, clearCanvasWithFlash, openColorPicker, closeColorPicker, confirmColor, updatePickerHighlight } from './ui/uiComponents';
+import { initUIComponents, setMode, updateFistProgress, clearCanvasWithFlash, openColorPicker, closeColorPicker, confirmColor, updatePickerHighlight, showToast } from './ui/uiComponents';
 import { initHandVisualizer, getSmoothedPosition, updateCursor, getSkeletonColor } from './ui/handVisualizer';
 // @ts-ignore
 import { DrawingUtils, HandLandmarker } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs';
@@ -16,8 +16,6 @@ let skeletonCanvas: HTMLCanvasElement;
 let drawingCanvas: HTMLCanvasElement;
 let skeletonCtx: CanvasRenderingContext2D;
 let drawingCtx: CanvasRenderingContext2D;
-let statusDot: HTMLElement;
-let statusText: HTMLElement;
 let loadingOverlay: HTMLElement;
 let drawingUtils: DrawingUtils | null = null;
 
@@ -25,10 +23,16 @@ let previousPose = 'NEUTRAL';
 let wasPinching = false;
 let lastTimestamp = -1;
 
-function resizeCanvases() {
+let trackingLostWhileDrawing = false;
+let disruptedSince = 0;
+const DISRUPTION_THRESHOLD = 2000;
+let lastToastTime = 0;
+const TOAST_COOLDOWN = 5000; // Don't spam toasts
 
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+function resizeCanvases() {
+    const panel = document.getElementById('drawingPanel')!;
+    const w = panel.clientWidth;
+    const h = panel.clientHeight;
     if (drawingCanvas.width !== w || drawingCanvas.height !== h) {
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = drawingCanvas.width;
@@ -157,47 +161,71 @@ function processResults(results: any) {
     skeletonCtx.save();
 
     if (!results.landmarks || results.landmarks.length === 0) {
-        statusDot.classList.remove('detected', 'poor-light');
-        statusText.textContent = 'Hand out of frame';
-        if (appState.wasPointing) { endStroke(); appState.wasPointing = false; }
+        // Hand out of frame — check if this is disrupting functionality
+        if (appState.wasPointing) {
+            trackingLostWhileDrawing = true;
+            endStroke();
+            appState.wasPointing = false;
+        }
+
         document.getElementById('fingerCursor')!.style.display = 'none';
         updateFistProgress({ x: 0, y: 0 }, 0);
+
+        if (trackingLostWhileDrawing) {
+            if (performance.now() - lastToastTime > TOAST_COOLDOWN) {
+                showToast('Hand out of frame — move your hand into the camera view', true);
+                lastToastTime = performance.now();
+            }
+        }
+
         skeletonCtx.restore();
         return;
     }
 
+    // Hand detected — reset disruption tracker
+    trackingLostWhileDrawing = false;
+
     const converted = results.landmarks.map((hand: any) =>
         hand.map((lm: { x: number, y: number }) => ({
-            x: (1 - lm.x) * window.innerWidth,
-            y: lm.y * window.innerHeight
+            x: (1 - lm.x) * drawingCanvas.width,
+            y: lm.y * drawingCanvas.height
         }))
     );
 
     document.getElementById('fingerCursor')!.style.display = '';
-    statusDot.classList.remove('poor-light');
-    statusDot.classList.add('detected');
 
     const centerLm = results.landmarks[0][9]; // Middle finger MCP (hand center)
     const isOutOfBounds = centerLm.x < 0.01 || centerLm.x > 0.99 || centerLm.y < 0.01 || centerLm.y > 0.99;
 
+    // Check for poor conditions that disrupt functionality
+    let isDisrupted = false;
     if (results.handednesses && results.handednesses.length > 0) {
         const conf = results.handednesses[0][0].score;
         if (conf < 0.65) {
-            statusDot.classList.add('poor-light');
-            statusText.textContent = 'Poor lighting or dirty lens';
+            isDisrupted = true;
+            if (disruptedSince === 0) {
+                disruptedSince = performance.now();
+            } else if (performance.now() - disruptedSince > DISRUPTION_THRESHOLD) {
+                if (performance.now() - lastToastTime > TOAST_COOLDOWN) {
+                    showToast('Poor lighting — try moving to a brighter area', true);
+                    lastToastTime = performance.now();
+                }
+            }
         } else if (isOutOfBounds) {
-            statusDot.classList.add('poor-light');
-            statusText.textContent = 'Hand moving out of frame';
-        } else {
-            statusText.textContent = converted.length === 1 ? '1 hand detected' : `${converted.length} hands detected`;
+            isDisrupted = true;
+            if (disruptedSince === 0) {
+                disruptedSince = performance.now();
+            } else if (performance.now() - disruptedSince > DISRUPTION_THRESHOLD) {
+                if (performance.now() - lastToastTime > TOAST_COOLDOWN) {
+                    showToast('Hand at edge of frame — center your hand', true);
+                    lastToastTime = performance.now();
+                }
+            }
         }
-    } else {
-        if (isOutOfBounds) {
-            statusDot.classList.add('poor-light');
-            statusText.textContent = 'Hand moving out of frame';
-        } else {
-            statusText.textContent = converted.length === 1 ? '1 hand detected' : `${converted.length} hands detected`;
-        }
+    }
+
+    if (!isDisrupted) {
+        disruptedSince = 0;
     }
 
     const landmarks = converted[0];
@@ -262,8 +290,6 @@ async function init() {
         video = document.getElementById('webcam') as HTMLVideoElement;
         skeletonCanvas = document.getElementById('skeletonCanvas') as HTMLCanvasElement;
         drawingCanvas = document.getElementById('drawingCanvas') as HTMLCanvasElement;
-        statusDot = document.getElementById('statusDot')!;
-        statusText = document.getElementById('statusText')!;
         loadingOverlay = document.getElementById('loadingOverlay')!;
 
         skeletonCtx = skeletonCanvas.getContext('2d')!;
@@ -282,25 +308,22 @@ async function init() {
 
         window.addEventListener('resize', resizeCanvases);
 
-        initCameraManager(video, statusDot, statusText, skeletonCanvas, skeletonCtx);
+        // Init camera manager without old status elements
+        initCameraManager(video, skeletonCanvas, skeletonCtx);
         await requestCameraAccess();
 
         resizeCanvases();
 
-        statusText.textContent = 'Loading hand tracking model...';
         await initHandTracking();
 
         drawingUtils = new DrawingUtils(skeletonCtx);
-
-        statusText.textContent = 'Hand Tracking Active';
 
         console.log('Doodle modular initialized successfully.');
         requestAnimationFrame(detectLoop);
 
     } catch (err: any) {
         console.error('Initialization failed:', err);
-        statusText.textContent = 'Error: ' + err.message;
-        statusDot.classList.remove('loading');
+        showToast('Error: ' + err.message, true, 8000);
         loadingOverlay.querySelector('span')!.textContent = 'Failed: ' + err.message;
     } finally {
         loadingOverlay.style.opacity = '0';

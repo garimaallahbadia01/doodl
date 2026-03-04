@@ -1,4 +1,27 @@
-/* â”€â”€ Reset & Base â”€â”€ */
+/* ══════════════════════════════════════════════════════
+   Doodle — Design System Stylesheet
+   Design Persona: Warm, minimal, canvas-first
+   ══════════════════════════════════════════════════════ */
+
+/* ── Design Tokens ── */
+:root {
+    --bg-app: #F3F1ED;
+    --bg-surface: #F7F6F2;
+    --border-panel: #D6D1CD;
+    --icon-inactive: #928C86;
+    --icon-active-bg: #43403D;
+    --icon-active-fg: #F7F6F2;
+    --divider: #D6D1CD;
+    --swatch-glow: rgba(252, 148, 149, 0.55);
+    --radius-panel: 12px;
+    --radius-btn: 8px;
+    --spacing-page: 32px;
+    --sidebar-width: 60px;
+    --transition-fast: 150ms ease;
+    --elevation-shadow: 0 4px 20px rgba(67, 64, 61, 0.08), 0 2px 6px rgba(67, 64, 61, 0.04);
+}
+
+/* ── Reset & Base ── */
 *,
 *::before,
 *::after {
@@ -12,63 +35,316 @@ body {
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: radial-gradient(ellipse at center, #12121a 0%, #0a0a0f 100%);
-    min-height: 100vh;
-    font-family: system-ui, -apple-system, 'SF Pro Display', sans-serif;
-    font-weight: 300;
-    letter-spacing: 0.08em;
-    color: rgba(255, 255, 255, 0.7);
+    background: var(--bg-app);
+    font-family: system-ui, -apple-system, 'SF Pro Display', 'Inter', sans-serif;
+    font-weight: 400;
+    color: #43403D;
 }
 
-/* â”€â”€ Container â”€â”€ */
+/* ── App Container ── */
+#app {
+    width: 100%;
+    height: 100%;
+}
+
 #container {
     position: relative;
     width: 100vw;
     height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-page);
+    gap: 24px;
 }
 
-/* â”€â”€ Panel A: Drawing Canvas â”€â”€ */
+/* ══════════════════════════════════════════════════════
+   SIDEBAR
+   ══════════════════════════════════════════════════════ */
+#sidebar {
+    position: relative;
+    z-index: 200;
+    width: var(--sidebar-width);
+    flex-shrink: 0;
+    align-self: center;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-panel);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--elevation-shadow);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0;
+    gap: 0;
+    overflow: visible;
+}
+
+/* Sidebar Logo */
+.sidebar-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 4px;
+    margin-bottom: 0px;
+}
+
+.sidebar-logo img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+
+/* Sidebar Groups */
+.sidebar-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 0;
+}
+
+/* Sidebar Divider */
+.sidebar-divider {
+    width: 32px;
+    height: 1px;
+    background: var(--divider);
+    flex-shrink: 0;
+}
+
+/* ── Sidebar Buttons ── */
+.sidebar-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-btn);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--transition-fast);
+    position: relative;
+}
+
+.sidebar-btn:hover {
+    background: #F0F0F0;
+}
+
+.sidebar-btn.active {
+    background: var(--icon-active-bg);
+}
+
+/* Icon Styling */
+.sidebar-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    opacity: 0.55;
+    transition: opacity var(--transition-fast), filter var(--transition-fast);
+}
+
+.sidebar-btn:hover .sidebar-icon {
+    opacity: 0.8;
+}
+
+.sidebar-btn.active .sidebar-icon {
+    opacity: 1;
+    filter: invert(1);
+}
+
+/* ══════════════════════════════════════════════════════
+   BRUSH SIZE SLIDER (Vertical)
+   ══════════════════════════════════════════════════════ */
+.brush-slider-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+}
+
+#brushSlider {
+    -webkit-appearance: none;
+    appearance: none;
+    writing-mode: vertical-lr;
+    direction: rtl;
+    width: 4px;
+    height: 60px;
+    border-radius: 2px;
+    background: #D6D1CD;
+    outline: none;
+    cursor: pointer;
+}
+
+#brushSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #43403D;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+#brushSlider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+#brushSlider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #43403D;
+    border: none;
+    cursor: pointer;
+}
+
+.brush-preview-dot {
+    border-radius: 50%;
+    background: #2C2C2C;
+    transition: width var(--transition-fast), height var(--transition-fast);
+}
+
+/* ══════════════════════════════════════════════════════
+   COLOR SWATCHES
+   ══════════════════════════════════════════════════════ */
+.swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.swatch:hover {
+    transform: scale(1.15);
+}
+
+/* Active swatch: glowy border matching logo color */
+.swatch.active {
+    box-shadow: 0 0 0 2.5px var(--swatch-glow), 0 0 8px var(--swatch-glow);
+}
+
+/* White swatch needs a visible border */
+.swatch-white {
+    border: 2px solid #D6D1CD;
+}
+
+.swatch-white.active {
+    border-color: transparent;
+}
+
+/* Set swatch colors via data attributes */
+.swatch[data-color="#000000"] {
+    background: #000000;
+}
+
+.swatch[data-color="#FFFFFF"] {
+    background: #FFFFFF;
+}
+
+.swatch[data-color="#FF3B30"] {
+    background: #FF3B30;
+}
+
+.swatch[data-color="#FF9500"] {
+    background: #FF9500;
+}
+
+.swatch[data-color="#34C759"] {
+    background: #34C759;
+}
+
+.swatch[data-color="#007AFF"] {
+    background: #007AFF;
+}
+
+.swatch[data-color="#AF52DE"] {
+    background: #AF52DE;
+}
+
+/* ══════════════════════════════════════════════════════
+   DRAWING PANEL (Main Canvas)
+   ══════════════════════════════════════════════════════ */
 #drawingPanel {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: #141416;
+    flex: 1;
+    align-self: stretch;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-panel);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--elevation-shadow);
+    overflow: hidden;
+    position: relative;
     z-index: 1;
 }
 
 #drawingPanel.grid-enabled {
     background-image:
-        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
     background-size: 30px 30px;
     background-position: center;
+    background-color: var(--bg-surface);
 }
 
 #drawingCanvas {
     width: 100%;
     height: 100%;
     pointer-events: none;
+    display: block;
 }
 
+/* ══════════════════════════════════════════════════════
+   PIP PANEL (Camera Feed)
+   ══════════════════════════════════════════════════════ */
 #pipPanel {
     position: fixed;
-    bottom: 24px;
-    right: 24px;
-    width: 320px;
-    height: 240px;
-    border-radius: 12px;
+    bottom: calc(var(--spacing-page) + 8px);
+    right: calc(var(--spacing-page) + 8px);
+    width: 200px;
+    height: 140px;
+    border-radius: var(--radius-panel);
     overflow: hidden;
-    box-shadow:
-        inset 0 0 0 1px rgba(255, 255, 255, 0.15),
-        0 8px 32px rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--border-panel);
+    box-shadow: var(--elevation-shadow);
+    background: var(--bg-surface);
     z-index: 100;
     resize: both;
-    min-width: 160px;
-    min-height: 120px;
-    max-width: 800px;
-    max-height: 600px;
+    min-width: 140px;
+    min-height: 100px;
+    max-width: 600px;
+    max-height: 420px;
+    cursor: grab;
+}
+
+/* Camera-off overlay inside PIP */
+.pip-camera-off {
+    display: none;
+    position: absolute;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-surface);
+    color: var(--icon-inactive);
+    z-index: 10;
+}
+
+.pip-camera-off svg {
+    width: 36px;
+    height: 36px;
+    opacity: 0.55;
+}
+
+.pip-camera-off.visible {
+    display: flex;
+}
+
+#pipPanel.dragging {
+    cursor: grabbing;
 }
 
 #webcam {
@@ -89,275 +365,24 @@ body {
     left: 0;
 }
 
-/* â”€â”€ Floating Finger Cursor â”€â”€ */
+/* ══════════════════════════════════════════════════════
+   FINGER CURSOR
+   ══════════════════════════════════════════════════════ */
 .finger-cursor {
     width: 14px;
     height: 14px;
     border-radius: 50%;
     background: rgba(50, 50, 50, 0.85);
     box-shadow: 0 0 8px 3px rgba(100, 120, 255, 0.4);
-    position: fixed;
+    position: absolute;
+    top: 0;
+    left: 0;
     pointer-events: none;
     transform: translate(-50%, -50%);
     transition: left 0.05s linear, top 0.05s linear;
     z-index: 1000;
 }
 
-/* â”€â”€ Panel C: Toolbar â”€â”€ */
-#toolbar {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(40px) saturate(180%);
-    -webkit-backdrop-filter: blur(40px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 100px;
-    /* Pill shape */
-    padding: 10px 18px;
-    box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.25),
-        inset 0 -1px 0 rgba(255, 255, 255, 0.05);
-}
-
-/* â”€â”€ Color Swatches â”€â”€ */
-.swatch {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    box-shadow:
-        inset -2px -2px 4px rgba(0, 0, 0, 0.25),
-        inset 1px 1px 3px rgba(255, 255, 255, 0.4);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.swatch:hover {
-    transform: scale(1.15);
-}
-
-.swatch.active {
-    box-shadow:
-        inset -2px -2px 4px rgba(0, 0, 0, 0.25),
-        inset 1px 1px 3px rgba(255, 255, 255, 0.4),
-        0 0 0 2px white;
-}
-
-.swatch[data-color="#000000"] {
-    background: #000;
-}
-
-.swatch[data-color="#FFFFFF"] {
-    background: #fff;
-}
-
-.swatch[data-color="#FF3B30"] {
-    background: #FF3B30;
-}
-
-.swatch[data-color="#007AFF"] {
-    background: #007AFF;
-}
-
-.swatch[data-color="#34C759"] {
-    background: #34C759;
-}
-
-.swatch[data-color="#FFCC00"] {
-    background: #FFCC00;
-}
-
-/* â”€â”€ Buttons â”€â”€ */
-.tb-btn {
-    padding: 7px 16px;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.08);
-    color: #ddd;
-    font-size: 13px;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-    user-select: none;
-}
-
-.tb-btn:hover {
-    background: rgba(255, 255, 255, 0.18);
-    color: #fff;
-}
-
-.tb-btn.active {
-    background: rgba(255, 80, 80, 0.35);
-    color: #ff9090;
-    border-color: rgba(255, 80, 80, 0.4);
-}
-
-#eraserBtn {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-#eraserBtn .eraser-icon {
-    width: 16px;
-    height: 16px;
-}
-
-/* â”€â”€ Divider â”€â”€ */
-.divider {
-    width: 1px;
-    height: 24px;
-    background: rgba(255, 255, 255, 0.15);
-}
-
-
-/* -- Brush Size Slider -- */
-.brush-size-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.brush-preview {
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.brush-preview-dot {
-    border-radius: 50%;
-    background: #fff;
-    transition: width 0.15s, height 0.15s;
-}
-
-#brushSlider {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 80px;
-    height: 4px;
-    border-radius: 2px;
-    background: rgba(255, 255, 255, 0.2);
-    outline: none;
-    cursor: pointer;
-}
-
-#brushSlider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-    cursor: pointer;
-    transition: transform 0.1s;
-}
-
-#brushSlider::-webkit-slider-thumb:hover {
-    transform: scale(1.2);
-}
-
-#brushSlider::-moz-range-thumb {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: #fff;
-    border: none;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-    cursor: pointer;
-}
-
-/* â”€â”€ Status Indicator â”€â”€ */
-#status {
-    position: absolute;
-    top: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 4;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(30, 30, 30, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 10px;
-    padding: 8px 18px;
-    font-size: 13px;
-    color: #aaa;
-    backdrop-filter: blur(6px);
-    transition: opacity 0.3s;
-}
-
-#statusDot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #666;
-    transition: background 0.25s;
-}
-
-#statusDot.detected {
-    background: #34C759;
-}
-
-#statusDot.loading {
-    background: #FFCC00;
-}
-
-#statusDot.poor-light {
-    background: #FF3B30;
-    box-shadow: 0 0 8px rgba(255, 59, 48, 0.6);
-}
-
-/* â”€â”€ Loading Overlay â”€â”€ */
-#loadingOverlay {
-    position: absolute;
-    inset: 0;
-    z-index: 100;
-    background: #0a0a0a;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 18px;
-    color: #ccc;
-    font-size: 15px;
-    transition: opacity 0.5s;
-}
-
-#loadingOverlay.hidden {
-    opacity: 0;
-    pointer-events: none;
-}
-
-.spinner {
-    width: 36px;
-    height: 36px;
-    border: 3px solid rgba(255, 255, 255, 0.1);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-           V3 â€” Gesture Layer Styles
-           â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-
-/* â”€â”€ Cursor Mode Variants â”€â”€ */
 .finger-cursor.drawing {
     background: rgba(50, 50, 50, 0.9);
     box-shadow: 0 0 10px 4px rgba(100, 120, 255, 0.5);
@@ -379,7 +404,7 @@ body {
 .finger-cursor.erasing {
     width: 28px;
     height: 28px;
-    background: url('Group%2010.svg') center/contain no-repeat;
+    background: url('/Group%2010.svg') center/contain no-repeat;
     border-radius: 0;
     box-shadow: none;
 }
@@ -390,7 +415,7 @@ body {
     border-radius: 0;
     background: transparent;
     box-shadow: none;
-    border: 2px solid rgba(255, 255, 255, 0.9);
+    border: 2px solid rgba(67, 64, 61, 0.9);
     transform: translate(-50%, -50%) rotate(45deg);
 }
 
@@ -400,58 +425,40 @@ body {
     transition: width 0.3s, height 0.3s, background 0.2s;
 }
 
-/* â”€â”€ Mode Badge â”€â”€ */
-#modeBadge {
+/* ══════════════════════════════════════════════════════
+   TOAST NOTIFICATION
+   ══════════════════════════════════════════════════════ */
+.toast {
     position: fixed;
-    top: 20px;
-    left: 20px;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
-    border-radius: 100px;
-    font-size: 12px;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    z-index: 9999;
+    padding: 10px 20px;
+    border-radius: 10px;
+    background: rgba(67, 64, 61, 0.94);
+    color: #FFFFFF;
+    font-size: 13px;
     font-weight: 500;
-    letter-spacing: 0.04em;
-    color: rgba(255, 255, 255, 0.85);
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(24px) saturate(160%);
-    -webkit-backdrop-filter: blur(24px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    letter-spacing: 0.02em;
     pointer-events: none;
-    transition: background 0.2s ease;
+    opacity: 0;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    white-space: nowrap;
 }
 
-#modeBadge.erase-mode {
-    background: rgba(255, 140, 0, 0.2);
-    border-color: rgba(255, 140, 0, 0.25);
+.toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
 }
 
-#modeBadge .badge-icon {
-    width: 14px;
-    height: 14px;
+.toast.warning {
+    background: rgba(255, 59, 48, 0.9);
 }
 
-@keyframes badgePulse {
-    0% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.15);
-    }
-
-    100% {
-        transform: scale(1);
-    }
-}
-
-#modeBadge.pulse {
-    animation: badgePulse 200ms ease;
-}
-
-/* â”€â”€ Fist Progress Ring â”€â”€ */
+/* ══════════════════════════════════════════════════════
+   FIST PROGRESS RING
+   ══════════════════════════════════════════════════════ */
 #fistProgress {
     position: fixed;
     pointer-events: none;
@@ -464,16 +471,9 @@ body {
     opacity: 1;
 }
 
-/* â”€â”€ PIP Drag â”€â”€ */
-#pipPanel {
-    cursor: grab;
-}
-
-#pipPanel.dragging {
-    cursor: grabbing;
-}
-
-/* â”€â”€ Canvas Clear Flash â”€â”€ */
+/* ══════════════════════════════════════════════════════
+   CANVAS CLEAR FLASH
+   ══════════════════════════════════════════════════════ */
 #clearFlash {
     position: fixed;
     inset: 0;
@@ -488,7 +488,9 @@ body {
     opacity: 0.6;
 }
 
-/* ── Undo/Redo Flashes & Status ── */
+/* ══════════════════════════════════════════════════════
+   UNDO/REDO FLASH
+   ══════════════════════════════════════════════════════ */
 .action-flash {
     position: fixed;
     inset: 0;
@@ -499,39 +501,20 @@ body {
 }
 
 .action-flash.undo {
-    background: rgba(150, 150, 150, 0.3);
+    background: rgba(150, 150, 150, 0.15);
 }
 
 .action-flash.redo {
-    background: rgba(100, 150, 255, 0.3);
+    background: rgba(100, 150, 255, 0.15);
 }
 
 .action-flash.flash {
     opacity: 1;
 }
 
-#undoRedoStatus {
-    position: fixed;
-    top: 60px;
-    left: 20px;
-    padding: 6px 14px;
-    border-radius: 12px;
-    background: rgba(0, 0, 0, 0.65);
-    color: white;
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s;
-    z-index: 100;
-}
-
-#undoRedoStatus.visible {
-    opacity: 1;
-}
-
-/* ── Radial Color Picker ── */
+/* ══════════════════════════════════════════════════════
+   RADIAL COLOR PICKER (gesture-driven)
+   ══════════════════════════════════════════════════════ */
 #colorPicker {
     position: fixed;
     width: 200px;
@@ -555,14 +538,52 @@ body {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.8);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(67, 64, 61, 0.45);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     transition: transform 0.1s, box-shadow 0.1s;
 }
 
 .picker-swatch.highlighted {
     transform: scale(1.3) !important;
-    /* overrides JS inline transform scale implicitly or we handle it in JS */
-    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.9), 0 8px 16px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 0 4px rgba(67, 64, 61, 0.55), 0 8px 16px rgba(0, 0, 0, 0.2);
     z-index: 2;
+}
+
+/* ══════════════════════════════════════════════════════
+   LOADING OVERLAY
+   ══════════════════════════════════════════════════════ */
+#loadingOverlay {
+    position: absolute;
+    inset: 0;
+    z-index: 9000;
+    background: var(--bg-app);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    color: #928C86;
+    font-size: 15px;
+    font-weight: 400;
+    transition: opacity 0.5s;
+}
+
+#loadingOverlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--border-panel);
+    border-top-color: #43403D;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }

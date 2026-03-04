@@ -102,8 +102,8 @@ export function downloadCanvas() {
     tempCanvas.height = drawingCanvas.height;
     const tempCtx = tempCanvas.getContext('2d')!;
 
-    // Black background
-    tempCtx.fillStyle = '#0a0a0f';
+    // White background
+    tempCtx.fillStyle = '#FFFFFF';
     tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
     tempCtx.drawImage(drawingCanvas, 0, 0);
