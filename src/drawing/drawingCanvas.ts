@@ -37,6 +37,15 @@ export function drawStroke(currX: number, currY: number) {
     const dy = currY - handState.prevY;
     const dist = Math.hypot(dx, dy);
 
+    // Jump Protection: If the hand moves > 80px in one frame, it's a tracking glitch.
+    if (dist > 80) {
+        handState.prevX = currX;
+        handState.prevY = currY;
+        handState.lastMidX = currX;
+        handState.lastMidY = currY;
+        return;
+    }
+
     if (dist < MIN_MOVE_THRESHOLD) {
         if (!handState.dotDrawn && handState.holdStart !== null) {
             if (performance.now() - handState.holdStart > DOT_HOLD_TIME) {
@@ -53,7 +62,6 @@ export function drawStroke(currX: number, currY: number) {
                 drawingCtx.fillStyle = appState.currentMode === 'ERASE' ? '#000' : appState.currentColor;
                 drawingCtx.fill();
                 drawingCtx.restore();
-                drawingCtx.globalCompositeOperation = 'source-over';
                 handState.dotDrawn = true;
 
                 if (currentStroke) {
@@ -81,19 +89,22 @@ export function drawStroke(currX: number, currY: number) {
     const midX = (handState.prevX + currX) / 2;
     const midY = (handState.prevY + currY) / 2;
 
+    // FIX: Use ?? instead of || so that coordinate 0 is not treated as falsy
+    const startX = handState.lastMidX ?? handState.prevX;
+    const startY = handState.lastMidY ?? handState.prevY;
+
     drawingCtx.beginPath();
-    drawingCtx.moveTo(handState.lastMidX || handState.prevX, handState.lastMidY || handState.prevY);
+    drawingCtx.moveTo(startX, startY);
     drawingCtx.quadraticCurveTo(handState.prevX, handState.prevY, midX, midY);
     drawingCtx.stroke();
     drawingCtx.restore();
-    drawingCtx.globalCompositeOperation = 'source-over';
 
     if (currentStroke) {
         currentStroke.segments.push({
             prevX: handState.prevX, prevY: handState.prevY,
             midX, midY,
-            lastMidX: handState.lastMidX || handState.prevX,
-            lastMidY: handState.lastMidY || handState.prevY
+            lastMidX: startX,
+            lastMidY: startY
         });
     }
 

@@ -4,8 +4,8 @@ import { Point2D } from '../types';
 import { calculateWeightedAverage } from '../utils/math';
 
 let cursorBuffer: Point2D[] = [];
-let displayedCursorX = 0;
-let displayedCursorY = 0;
+export let displayedCursorX = 0;
+export let displayedCursorY = 0;
 let fingerCursor: HTMLElement;
 
 export function initHandVisualizer() {
@@ -21,27 +21,22 @@ export function getSmoothedPosition(buffer: Point2D[], rawX: number, rawY: numbe
 export function updateCursor(fingerPos: Point2D, pose: string, fistHoldStart: number) {
     if (!fingerCursor) return;
 
-    if (pose === 'POINT') {
-        displayedCursorX = fingerPos.x;
-        displayedCursorY = fingerPos.y;
-        cursorBuffer = [];
-        fingerCursor.style.transition = 'none';
-    } else {
-        fingerCursor.style.transition = '';
-        cursorBuffer.push({ x: fingerPos.x, y: fingerPos.y });
-        if (cursorBuffer.length > CURSOR_SMOOTHING_BUFFER_SIZE) cursorBuffer.shift();
+    // Unified cursor smoothing: always use a buffer to prevent jitter and jumps
+    cursorBuffer.push({ x: fingerPos.x, y: fingerPos.y });
+    if (cursorBuffer.length > CURSOR_SMOOTHING_BUFFER_SIZE) cursorBuffer.shift();
 
-        const smoothed = calculateWeightedAverage(cursorBuffer);
-        const smoothX = smoothed.x;
-        const smoothY = smoothed.y;
+    const smoothed = calculateWeightedAverage(cursorBuffer);
+    const smoothX = smoothed.x;
+    const smoothY = smoothed.y;
 
-        if (Math.hypot(smoothX - displayedCursorX, smoothY - displayedCursorY) > CURSOR_DEAD_ZONE) {
-            displayedCursorX = smoothX;
-            displayedCursorY = smoothY;
-        }
+    // Only update displayed position if it moves beyond a tiny dead zone to prevent tiny vibrations
+    if (Math.hypot(smoothX - displayedCursorX, smoothY - displayedCursorY) > CURSOR_DEAD_ZONE) {
+        displayedCursorX = smoothX;
+        displayedCursorY = smoothY;
     }
 
-    fingerCursor.style.transform = `translate(${displayedCursorX}px, ${displayedCursorY}px)`;
+    // Center the cursor dot on the fingertip (offset by half cursor size)
+    fingerCursor.style.transform = `translate(${displayedCursorX - 7}px, ${displayedCursorY - 7}px)`;
 
     fingerCursor.classList.remove('drawing', 'erasing', 'picking', 'fist-hold', 'pinching');
     fingerCursor.style.width = '';

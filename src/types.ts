@@ -40,6 +40,9 @@ export interface AppState {
     lastUndoTime: number;
     redoHoldStart: number;
     lastRedoTime: number;
+    wasHoldingUndo?: boolean;
+    wasHoldingRedo?: boolean;
+    isDarkMode: boolean;
 }
 
 export interface StrokeSegment {

@@ -88,6 +88,15 @@
                 </div>
             </div>
 
+            <!-- Theme Toggle (Bottom Left, under sidebar) -->
+            <button id="themeToggleBtn" class="theme-toggle-btn" title="Toggle Dark Mode">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="feather feather-moon">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
+
             <!-- Drawing Canvas (Main Stage) -->
             <div id="drawingPanel">
                 <canvas id="drawingCanvas" role="img" aria-label="Interactive drawing canvas"></canvas>
@@ -122,6 +131,27 @@
             <!-- Clear Flash -->
             <div id="clearFlash"></div>
             <div id="actionFlash" class="action-flash"></div>
+
+            <!-- Export Modal -->
+            <div id="exportModal" class="export-modal-backdrop" aria-hidden="true">
+                <div class="export-modal">
+                    <h2 class="export-modal-title">your doodle, framed ✨</h2>
+                    <p class="export-modal-subtitle">name it, sign it, keep it</p>
+
+                    <div class="export-preview-card">
+                        <canvas id="exportPreviewCanvas"></canvas>
+                        <div class="export-preview-footer">
+                            <input type="text" id="exportTitle" class="export-input" placeholder="title" maxlength="60">
+                            <img src="/doodle.svg" alt="Doodle" class="export-brand-logo">
+                        </div>
+                    </div>
+
+                    <div class="export-modal-actions">
+                        <button id="exportCloseBtn" class="export-btn export-btn-close">Close</button>
+                        <button id="exportDownloadBtn" class="export-btn export-btn-download">Download</button>
+                    </div>
+                </div>
+            </div>
 
             <!-- Loading Overlay -->
             <div id="loadingOverlay">

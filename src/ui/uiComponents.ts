@@ -1,6 +1,6 @@
 import { appState } from '../core/appState';
 import { PICKER_COLORS, COLOR_PICKER_RADIUS, SWATCH_HIT_RADIUS, FIST_HOLD_TIME, FIST_ARC_COLOR } from '../constants';
-import { clearCanvas, downloadCanvas, performUndo, performRedo } from '../drawing/drawingState';
+import { clearCanvas, openExportModal, performUndo, performRedo } from '../drawing/drawingState';
 
 let colorPickerEl: HTMLElement;
 let eraserBtn: HTMLElement;
@@ -17,6 +17,7 @@ let fistCtx: CanvasRenderingContext2D;
 let toastEl: HTMLElement;
 let undoBtn: HTMLElement;
 let redoBtn: HTMLElement;
+let themeToggleBtn: HTMLElement;
 
 let toastTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -36,6 +37,13 @@ export function initUIComponents() {
     toastEl = document.getElementById('toast')!;
     undoBtn = document.getElementById('undoBtn')!;
     redoBtn = document.getElementById('redoBtn')!;
+    themeToggleBtn = document.getElementById('themeToggleBtn')!;
+
+    // Initialize Theme
+    if (appState.isDarkMode) {
+        document.body.classList.add('dark-theme');
+        updateThemeIcon(true);
+    }
 
     buildPickerSwatches();
 
@@ -61,7 +69,7 @@ export function initUIComponents() {
 
     const exportBtn = document.getElementById('exportBtn')!;
     exportBtn.addEventListener('click', () => {
-        downloadCanvas();
+        openExportModal();
     });
 
     gridBtn.addEventListener('click', () => {
@@ -76,6 +84,20 @@ export function initUIComponents() {
 
     redoBtn.addEventListener('click', () => {
         performRedo();
+    });
+
+    // Theme Toggle
+    themeToggleBtn.addEventListener('click', () => {
+        appState.isDarkMode = !appState.isDarkMode;
+        localStorage.setItem('doodle_theme', appState.isDarkMode ? 'dark' : 'light');
+
+        if (appState.isDarkMode) {
+            document.body.classList.add('dark-theme');
+        } else {
+            document.body.classList.remove('dark-theme');
+        }
+
+        updateThemeIcon(appState.isDarkMode);
     });
 
     // Color swatches
@@ -93,6 +115,15 @@ export function initUIComponents() {
             }
         });
     });
+}
+
+function updateThemeIcon(isDark: boolean) {
+    if (!themeToggleBtn) return;
+    if (isDark) {
+        themeToggleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
+    } else {
+        themeToggleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+    }
 }
 
 function updateBrushPreview() {
@@ -127,7 +158,10 @@ export function openColorPicker(fingerPos: { x: number, y: number }) {
     appState.isColorPickerOpen = true;
     appState.pickerAnchor = { x: fingerPos.x, y: fingerPos.y };
     if (colorPickerEl) {
-        colorPickerEl.style.transform = `translate(${appState.pickerAnchor.x}px, ${appState.pickerAnchor.y}px)`;
+        // Position using left/top to avoid conflicting with CSS scale transforms.
+        // The picker is 200x200, so we offset by -100 to center it.
+        colorPickerEl.style.left = `${appState.pickerAnchor.x - 100}px`;
+        colorPickerEl.style.top = `${appState.pickerAnchor.y - 100}px`;
         colorPickerEl.classList.add('visible');
         Array.from(colorPickerEl.children).forEach(s => s.classList.remove('highlighted'));
     }

@@ -16,5 +16,6 @@ export const appState: AppState = {
     undoHoldStart: 0,
     lastUndoTime: 0,
     redoHoldStart: 0,
-    lastRedoTime: 0
+    lastRedoTime: 0,
+    isDarkMode: localStorage.getItem('doodle_theme') === 'dark'
 };
