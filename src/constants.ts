@@ -4,8 +4,8 @@
 export const PINCH_START_THRESHOLD = 0.16;
 export const PINCH_END_THRESHOLD = 0.28;
 export const PINCH_RELEASE_TIMEOUT = 120;
-export const MIN_MOVE_THRESHOLD = 5;
-export const SMOOTHING_BUFFER_SIZE = 10;
+export const MIN_MOVE_THRESHOLD = 2.0;
+export const SMOOTHING_BUFFER_SIZE = 20;
 export const DOT_HOLD_TIME = 200;
 
 // ----------------------------------------------------
@@ -21,9 +21,9 @@ export const ERASER_WIDTH_SCALE = 10;
 // ----------------------------------------------------
 export const INDEX_EXTENSION_RATIO = 1.12;
 export const OTHERS_EXTENSION_RATIO = 1.28;
-export const FAST_MOVEMENT_THRESHOLD = 4000;
-export const PALM_HISTORY_SIZE = 6;
-export const PALM_STABILITY_THRESHOLD = 30;
+export const FAST_MOVEMENT_THRESHOLD = 5000;
+export const PALM_HISTORY_SIZE = 8;
+export const PALM_STABILITY_THRESHOLD = 25;
 export const PALM_HOLD_TIME = 500;
 export const FIST_HOLD_TIME = 1000;
 export const FIST_ARC_COLOR = '#FF3333';
@@ -40,6 +40,6 @@ export const UNDO_REPEAT_DELAY = 500;
 export const UNDO_REPEAT_INTERVAL = 300;
 export const UNDO_HISTORY_LIMIT = 10;
 export const SWATCH_HIT_RADIUS = 28;
-export const CURSOR_SMOOTHING_BUFFER_SIZE = 15;
-export const CURSOR_DEAD_ZONE = 5;
+export const CURSOR_SMOOTHING_BUFFER_SIZE = 12;
+export const CURSOR_DEAD_ZONE = 3;
 export const COLOR_PICKER_RADIUS = 60;

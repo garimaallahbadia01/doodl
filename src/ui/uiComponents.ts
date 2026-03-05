@@ -1,6 +1,6 @@
 import { appState } from '../core/appState';
 import { PICKER_COLORS, COLOR_PICKER_RADIUS, SWATCH_HIT_RADIUS, FIST_HOLD_TIME, FIST_ARC_COLOR } from '../constants';
-import { clearCanvas, downloadCanvas, performUndo, performRedo } from '../drawing/drawingState';
+import { clearCanvas, openExportModal, performUndo, performRedo } from '../drawing/drawingState';
 
 let colorPickerEl: HTMLElement;
 let eraserBtn: HTMLElement;
@@ -61,7 +61,7 @@ export function initUIComponents() {
 
     const exportBtn = document.getElementById('exportBtn')!;
     exportBtn.addEventListener('click', () => {
-        downloadCanvas();
+        openExportModal();
     });
 
     gridBtn.addEventListener('click', () => {
@@ -127,7 +127,10 @@ export function openColorPicker(fingerPos: { x: number, y: number }) {
     appState.isColorPickerOpen = true;
     appState.pickerAnchor = { x: fingerPos.x, y: fingerPos.y };
     if (colorPickerEl) {
-        colorPickerEl.style.transform = `translate(${appState.pickerAnchor.x}px, ${appState.pickerAnchor.y}px)`;
+        // Position using left/top to avoid conflicting with CSS scale transforms.
+        // The picker is 200x200, so we offset by -100 to center it.
+        colorPickerEl.style.left = `${appState.pickerAnchor.x - 100}px`;
+        colorPickerEl.style.top = `${appState.pickerAnchor.y - 100}px`;
         colorPickerEl.classList.add('visible');
         Array.from(colorPickerEl.children).forEach(s => s.classList.remove('highlighted'));
     }

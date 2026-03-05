@@ -1,6 +1,8 @@
 import { PoseMode, Point2D } from '../types';
 import { PINCH_START_THRESHOLD, PINCH_END_THRESHOLD, PINCH_RELEASE_TIMEOUT, INDEX_EXTENSION_RATIO, OTHERS_EXTENSION_RATIO, FAST_MOVEMENT_THRESHOLD, PALM_HISTORY_SIZE, PALM_STABILITY_THRESHOLD } from '../constants';
 
+let previousPose: PoseMode = 'NEUTRAL';
+
 export let handVelocity = { x: 0, y: 0 };
 export let palmHistory: Point2D[] = [];
 export let isPinching = false;
@@ -28,9 +30,12 @@ export function isThumbExtended(landmarks: any[]) {
 }
 
 export function getHandPose(landmarks: any[]): PoseMode {
+    // -- POINT Hysteresis: Easier to stay pointing than to start pointing --
+    const pointRatio = (previousPose === 'POINT') ? INDEX_EXTENSION_RATIO * 0.9 : INDEX_EXTENSION_RATIO;
+
     const ext = {
         thumb: isThumbExtended(landmarks),
-        index: isFingerExtended(landmarks, 8, 6, INDEX_EXTENSION_RATIO),
+        index: isFingerExtended(landmarks, 8, 6, pointRatio),
         middle: isFingerExtended(landmarks, 12, 10, OTHERS_EXTENSION_RATIO),
         ring: isFingerExtended(landmarks, 16, 14, OTHERS_EXTENSION_RATIO),
         pinky: isFingerExtended(landmarks, 20, 18, OTHERS_EXTENSION_RATIO)
@@ -54,13 +59,20 @@ export function getHandPose(landmarks: any[]): PoseMode {
     poseHistory.push(rawPose);
     if (poseHistory.length > 3) poseHistory.shift();
 
-    // If POINT was detected twice in the last 3 frames, force POINT to bridge 1-frame drops
-    if (poseHistory.filter(p => p === 'POINT').length >= 2) {
-        return 'POINT';
+    // Consensus: If a pose appears in 2 out of 3 frames, it wins.
+    const counts: Record<string, number> = {};
+    poseHistory.forEach(p => counts[p] = (counts[p] || 0) + 1);
+
+    for (const p in counts) {
+        if (counts[p] >= 2) {
+            previousPose = p as PoseMode;
+            return p as PoseMode;
+        }
     }
 
-    return rawPose;
+    return previousPose;
 }
+
 
 export function updatePalmCenter(landmarks: any[], outPoint: Point2D) {
     const w = landmarks[0], i = landmarks[5], p = landmarks[17];
@@ -122,7 +134,12 @@ export function detectPinch(landmarks: any[]) {
     const pinchDist = Math.hypot(indexTip.x - thumbTip.x, indexTip.y - thumbTip.y);
     const normalizedPinch = pinchDist / handSize;
 
-    if (!isPinching && normalizedPinch < PINCH_START_THRESHOLD) {
+    // To prevent stray thumbs from opening the palette,
+    // ensure both thumb and index are somewhat curled/bent inward
+    const isThumbCurled = !isThumbExtended(landmarks);
+    const isIndexCurled = !isFingerExtended(landmarks, 8, 6, INDEX_EXTENSION_RATIO * 0.9);
+
+    if (!isPinching && normalizedPinch < PINCH_START_THRESHOLD && isThumbCurled && isIndexCurled) {
         isPinching = true;
         pinchReleaseStartTime = 0;
     } else if (isPinching && normalizedPinch > PINCH_END_THRESHOLD) {
@@ -149,4 +166,139 @@ export function emptyPalmHistory() {
 export function resetVelocityTracking() {
     lastPalmCenter = null;
     lastFrameTime = performance.now();
+}
+
+
+// ══════════════════════════════════════════════════════
+// Pinch Color Palette State Machine
+// ══════════════════════════════════════════════════════
+export type PinchPaletteState = 'CLOSED' | 'DWELLING' | 'BROWSING' | 'CANCELLING';
+export let pinchPaletteState: PinchPaletteState = 'CLOSED';
+
+let pinchStillStart = 0;
+let lastPinchPos: Point2D | null = null;
+let pinchStartPos: Point2D | null = null;  // Fixed origin, never updated during gesture
+let hasBrowsed = false;
+let pinchDwellStart = 0;                   // When pinch first started
+let paletteOpenTime = 0;                   // When BROWSING started (for min confirm time)
+
+const PINCH_CANCEL_HOLD = 2000;            // 2s hold-still to cancel
+const PINCH_STILL_THRESHOLD = 8;           // px, considered "still" per frame
+const PINCH_BROWSE_MIN_DISTANCE = 60;      // px, total distance from origin to count as "browsed"
+const PINCH_DWELL_TIME = 400;              // ms pinch must be held before palette opens
+const PINCH_MIN_OPEN_TIME = 500;           // ms palette must be open before release confirms
+
+/**
+ * Call every frame while hand is tracked.
+ * Returns current state, midpoint position, and whether a confirm/cancel just fired.
+ */
+export function updatePinchPalette(landmarks: any[], currentlyPinching: boolean): {
+    state: PinchPaletteState;
+    position: Point2D;
+    cancelled: boolean;
+    confirmed: boolean;
+} {
+    const thumbTip = landmarks[4];
+    const indexTip = landmarks[8];
+    const pos: Point2D = {
+        x: (thumbTip.x + indexTip.x) / 2,
+        y: (thumbTip.y + indexTip.y) / 2
+    };
+
+    let cancelled = false;
+    let confirmed = false;
+
+    if (pinchPaletteState === 'CLOSED') {
+        if (currentlyPinching) {
+            pinchPaletteState = 'DWELLING';
+            pinchDwellStart = performance.now();
+            lastPinchPos = { x: pos.x, y: pos.y };
+        }
+    } else if (pinchPaletteState === 'DWELLING') {
+        if (!currentlyPinching) {
+            // Released before dwell completed: silently reset
+            pinchPaletteState = 'CLOSED';
+            pinchDwellStart = 0;
+            lastPinchPos = null;
+        } else if (performance.now() - pinchDwellStart >= PINCH_DWELL_TIME) {
+            // Dwell complete: open the palette
+            pinchPaletteState = 'BROWSING';
+            paletteOpenTime = performance.now();  // Track when palette actually opened
+            pinchStillStart = 0;
+            hasBrowsed = false;
+            pinchStartPos = { x: pos.x, y: pos.y };  // Fixed origin starts NOW
+            lastPinchPos = { x: pos.x, y: pos.y };
+        }
+    } else {
+        if (!currentlyPinching) {
+            // Released pinch: confirm only if browsed AND open long enough
+            if (hasBrowsed && performance.now() - paletteOpenTime >= PINCH_MIN_OPEN_TIME) {
+                confirmed = true;
+            } else {
+                cancelled = true;  // Too quick or didn't browse, cancel
+            }
+            pinchPaletteState = 'CLOSED';
+            pinchStillStart = 0;
+            lastPinchPos = null;
+            pinchStartPos = null;
+            hasBrowsed = false;
+            pinchDwellStart = 0;
+            paletteOpenTime = 0;
+        } else {
+            // Still pinching: check if user has browsed far enough from origin
+            if (!hasBrowsed && pinchStartPos) {
+                const totalDist = Math.hypot(pos.x - pinchStartPos.x, pos.y - pinchStartPos.y);
+                if (totalDist > PINCH_BROWSE_MIN_DISTANCE) {
+                    hasBrowsed = true;
+                }
+            }
+
+            // Check per-frame movement for cancel hold detection
+            const frameDist = lastPinchPos
+                ? Math.hypot(pos.x - lastPinchPos.x, pos.y - lastPinchPos.y)
+                : 0;
+
+            if (frameDist < PINCH_STILL_THRESHOLD) {
+                if (pinchStillStart === 0) {
+                    pinchStillStart = performance.now();
+                } else if (performance.now() - pinchStillStart > PINCH_CANCEL_HOLD) {
+                    cancelled = true;
+                    pinchPaletteState = 'CLOSED';
+                    pinchStillStart = 0;
+                    lastPinchPos = null;
+                    pinchStartPos = null;
+                    hasBrowsed = false;
+                    pinchDwellStart = 0;
+                    paletteOpenTime = 0;
+                } else {
+                    pinchPaletteState = 'CANCELLING';
+                }
+            } else {
+                pinchPaletteState = 'BROWSING';
+                pinchStillStart = 0;
+            }
+            lastPinchPos = { x: pos.x, y: pos.y };
+        }
+    }
+
+    return { state: pinchPaletteState, position: pos, cancelled, confirmed };
+}
+
+export function resetPinchPalette() {
+    pinchPaletteState = 'CLOSED';
+    pinchStillStart = 0;
+    lastPinchPos = null;
+    pinchStartPos = null;
+    hasBrowsed = false;
+    pinchDwellStart = 0;
+    paletteOpenTime = 0;
+}
+
+// ══════════════════════════════════════════════════════
+// Idle Gesture Detection
+// ══════════════════════════════════════════════════════
+// TWO_FINGERS (peace sign) = "pen down". Immediately ends
+// any active stroke, bypassing the sticky grace period.
+export function isIdleGesture(pose: PoseMode): boolean {
+    return pose === 'TWO_FINGERS';
 }

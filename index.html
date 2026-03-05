@@ -123,6 +123,27 @@
             <div id="clearFlash"></div>
             <div id="actionFlash" class="action-flash"></div>
 
+            <!-- Export Modal -->
+            <div id="exportModal" class="export-modal-backdrop" aria-hidden="true">
+                <div class="export-modal">
+                    <h2 class="export-modal-title">your doodle, framed ✨</h2>
+                    <p class="export-modal-subtitle">name it, sign it, keep it</p>
+
+                    <div class="export-preview-card">
+                        <canvas id="exportPreviewCanvas"></canvas>
+                        <div class="export-preview-footer">
+                            <input type="text" id="exportTitle" class="export-input" placeholder="title" maxlength="60">
+                            <img src="/doodle.svg" alt="Doodle" class="export-brand-logo">
+                        </div>
+                    </div>
+
+                    <div class="export-modal-actions">
+                        <button id="exportCloseBtn" class="export-btn export-btn-close">Close</button>
+                        <button id="exportDownloadBtn" class="export-btn export-btn-download">Download</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Loading Overlay -->
             <div id="loadingOverlay">
                 <div class="spinner"></div>

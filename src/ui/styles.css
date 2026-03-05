@@ -8,6 +8,7 @@
     --bg-app: #F3F1ED;
     --bg-surface: #F7F6F2;
     --border-panel: #D6D1CD;
+    --text-primary: #43403D;
     --icon-inactive: #928C86;
     --icon-active-bg: #43403D;
     --icon-active-fg: #F7F6F2;
@@ -38,7 +39,8 @@ body {
     background: var(--bg-app);
     font-family: system-ui, -apple-system, 'SF Pro Display', 'Inter', sans-serif;
     font-weight: 400;
-    color: #43403D;
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* ── App Container ── */
@@ -378,8 +380,7 @@ body {
     top: 0;
     left: 0;
     pointer-events: none;
-    transform: translate(-50%, -50%);
-    transition: left 0.05s linear, top 0.05s linear;
+    will-change: transform;
     z-index: 1000;
 }
 
@@ -586,4 +587,176 @@ body {
     to {
         transform: rotate(360deg);
     }
+}
+
+/* ══════════════════════════════════════════════════════
+   EXPORT MODAL
+   ══════════════════════════════════════════════════════ */
+
+/* Backdrop: uses --bg-app tone, not a generic gray */
+.export-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(243, 241, 237, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.export-modal-backdrop.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Modal Container */
+.export-modal {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    max-width: 460px;
+    width: 88%;
+    transform: translateY(12px) scale(0.97);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.export-modal-backdrop.visible .export-modal {
+    transform: translateY(0) scale(1);
+}
+
+/* Heading: uses app's system font stack */
+.export-modal-title {
+    font-family: system-ui, -apple-system, 'SF Pro Display', 'Inter', sans-serif;
+    font-size: 24px;
+    font-weight: 600;
+    color: #43403D;
+    letter-spacing: -0.02em;
+    text-align: center;
+}
+
+/* Subtitle */
+.export-modal-subtitle {
+    font-family: system-ui, -apple-system, 'SF Pro Display', 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--icon-inactive);
+    margin-top: -16px;
+    text-align: center;
+}
+
+/* Preview Card: mirrors #drawingPanel styling */
+.export-preview-card {
+    width: 100%;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-panel);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--elevation-shadow);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+#exportPreviewCanvas {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Footer: Artist | Title | Brand — mirrors sidebar muted tones */
+.export-preview-footer {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 16px;
+    border-top: 1px solid var(--border-panel);
+    background: var(--bg-surface);
+}
+
+.export-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-family: system-ui, -apple-system, 'SF Pro Display', 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    color: #43403D;
+    outline: none;
+    padding: 4px 0;
+    min-width: 0;
+    border-bottom: 1.5px solid transparent;
+    transition: border-color var(--transition-fast);
+}
+
+.export-input::placeholder {
+    color: var(--icon-inactive);
+    font-weight: 400;
+}
+
+.export-input:focus {
+    border-bottom-color: var(--icon-active-bg);
+}
+
+/* Brand logo: doodle wordmark SVG */
+.export-brand-logo {
+    height: 14px;
+    width: auto;
+    object-fit: contain;
+    flex-shrink: 0;
+    opacity: 0.6;
+}
+
+/* Action Buttons Row */
+.export-modal-actions {
+    display: flex;
+    gap: 14px;
+    width: 100%;
+}
+
+/* Shared button base — pill shape, matches reference */
+.export-btn {
+    flex: 1;
+    padding: 14px 0;
+    border-radius: 48px;
+    font-family: system-ui, -apple-system, 'SF Pro Display', 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform var(--transition-fast),
+        box-shadow var(--transition-fast),
+        background var(--transition-fast);
+    letter-spacing: 0.01em;
+}
+
+.export-btn:active {
+    transform: scale(0.96);
+}
+
+/* Close: outlined, uses design system border color */
+.export-btn-close {
+    background: transparent;
+    border: 1.5px solid var(--icon-active-bg);
+    color: var(--icon-active-bg);
+}
+
+.export-btn-close:hover {
+    background: rgba(67, 64, 61, 0.05);
+}
+
+/* Download: filled, uses design system active color */
+.export-btn-download {
+    background: var(--icon-active-bg);
+    border: 1.5px solid var(--icon-active-bg);
+    color: var(--icon-active-fg);
+}
+
+.export-btn-download:hover {
+    background: #2C2A27;
+    border-color: #2C2A27;
+    box-shadow: var(--elevation-shadow);
 }

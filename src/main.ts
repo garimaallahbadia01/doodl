@@ -1,13 +1,14 @@
 import { initHandTracking, detectHand, handLandmarker } from './core/handTracking';
-import { getHandPose, updateVelocity, isHandMovingFast, detectPinch, isPalmStable, isPinching, palmHistory } from './core/gestureDetector';
+import { getHandPose, updateVelocity, detectPinch, isPalmStable, isPinching, palmHistory, updatePinchPalette, isIdleGesture } from './core/gestureDetector';
 import { drawStroke, endStroke, handState } from './drawing/drawingCanvas';
 import { initDrawingState, saveCanvasState, performUndo, performRedo } from './drawing/drawingState';
 import { appState } from './core/appState';
 import { initUIComponents, setMode, updateFistProgress, clearCanvasWithFlash, openColorPicker, closeColorPicker, confirmColor, updatePickerHighlight, showToast } from './ui/uiComponents';
-import { initHandVisualizer, getSmoothedPosition, updateCursor, getSkeletonColor } from './ui/handVisualizer';
+import { initHandVisualizer, updateCursor, getSkeletonColor, getSmoothedPosition } from './ui/handVisualizer';
+import { showTutorialIfNeeded } from './ui/tutorialModal';
 // @ts-ignore
 import { DrawingUtils, HandLandmarker } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs';
-import { PALM_HOLD_TIME, FIST_HOLD_TIME, UNDO_REPEAT_DELAY, UNDO_REPEAT_INTERVAL } from './constants';
+import { PALM_HOLD_TIME, FIST_HOLD_TIME } from './constants';
 import { setupDraggablePIP } from './ui/uiComponents';
 import { initCameraManager, requestCameraAccess, isCameraActive } from './core/cameraManager';
 
@@ -19,8 +20,6 @@ let drawingCtx: CanvasRenderingContext2D;
 let loadingOverlay: HTMLElement;
 let drawingUtils: DrawingUtils | null = null;
 
-let previousPose = 'NEUTRAL';
-let wasPinching = false;
 let lastTimestamp = -1;
 
 let trackingLostWhileDrawing = false;
@@ -28,6 +27,10 @@ let disruptedSince = 0;
 const DISRUPTION_THRESHOLD = 2000;
 let lastToastTime = 0;
 const TOAST_COOLDOWN = 5000; // Don't spam toasts
+
+// Grace period for tracking loss to prevent broken lines
+let trackingLossFrames = 0;
+const MAX_GRACE_FRAMES = 15; // ~250ms of "Sticky" ink
 
 function resizeCanvases() {
     const panel = document.getElementById('drawingPanel')!;
@@ -47,9 +50,35 @@ function resizeCanvases() {
 }
 
 function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
-    const enteredNewPose = (pose !== previousPose);
 
-    // -- Open Palm + stable -> Toggle Mode --
+    // -- Pinch Color Palette State Machine (processed first as modal) --
+    detectPinch(landmarks);
+    const palette = updatePinchPalette(landmarks, isPinching);
+
+    if (palette.state === 'BROWSING' || palette.state === 'CANCELLING') {
+        // Palette is open: show it and follow hand
+        if (!appState.isColorPickerOpen) {
+            openColorPicker(palette.position);
+        }
+        updatePickerHighlight(palette.position);
+    }
+
+    if (palette.confirmed) {
+        confirmColor();
+        if (appState.currentMode === 'ERASE') {
+            setMode('DRAW');
+        }
+        closeColorPicker();
+    }
+
+    if (palette.cancelled) {
+        closeColorPicker();
+    }
+
+    // MODAL GUARD: while palette is active, skip all other gestures
+    if (palette.state !== 'CLOSED') return;
+
+    // -- Open Palm + stable -> Toggle Draw/Erase Mode --
     if (pose === 'OPEN_PALM' && isPalmStable(landmarks)) {
         if (appState.palmHoldStart === -1) {
             // Already triggered, wait until they break the pose
@@ -57,8 +86,8 @@ function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
             if (appState.palmHoldStart === 0) appState.palmHoldStart = performance.now();
             if (performance.now() - appState.palmHoldStart >= PALM_HOLD_TIME) {
                 setMode(appState.currentMode === 'DRAW' ? 'ERASE' : 'DRAW');
-                appState.palmHoldStart = -1; // Lock until pose changes
-                palmHistory.length = 0; // Empty
+                appState.palmHoldStart = -1;
+                palmHistory.length = 0;
             }
         }
     } else if (pose !== 'OPEN_PALM') {
@@ -66,88 +95,69 @@ function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
         palmHistory.length = 0;
     }
 
+    // -- Thumbs Up/Down -> Redo / Undo --
+    if (pose === 'THUMBS_DOWN') {
+        if (!appState.wasHoldingUndo && performance.now() - appState.lastUndoTime > 400) {
+            performUndo();
+            appState.lastUndoTime = performance.now();
+        }
+        appState.wasHoldingUndo = true;
+    } else {
+        appState.wasHoldingUndo = false;
+    }
+
+    if (pose === 'THUMBS_UP') {
+        if (!appState.wasHoldingRedo && performance.now() - appState.lastRedoTime > 400) {
+            performRedo();
+            appState.lastRedoTime = performance.now();
+        }
+        appState.wasHoldingRedo = true;
+    } else {
+        appState.wasHoldingRedo = false;
+    }
+
     // -- Fist held -> Clear Canvas --
     if (pose === 'FIST') {
         if (appState.fistHoldStart === -1) {
-            // Already cleared, hide cursor and wait for release
             updateFistProgress(fingerPos, 0);
         } else {
             if (appState.fistHoldStart === 0) appState.fistHoldStart = performance.now();
             updateFistProgress(fingerPos, appState.fistHoldStart);
             if (performance.now() - appState.fistHoldStart >= FIST_HOLD_TIME) {
                 clearCanvasWithFlash();
-                appState.fistHoldStart = -1; // Lock until fist is opened
+                appState.fistHoldStart = -1;
             }
         }
     } else {
         appState.fistHoldStart = 0;
-        updateFistProgress(fingerPos, 0); // Hide
-    }
-
-    // -- Pinch -> Confirm Color --
-    detectPinch(landmarks);
-    if (isPinching && !wasPinching) {
-        if (appState.isColorPickerOpen) {
-            confirmColor();
-            if (appState.currentMode === 'ERASE') {
-                setMode('DRAW');
-            }
-        }
-    }
-    wasPinching = isPinching;
-
-    // -- Two Fingers -> Open Picker --
-    if (pose === 'TWO_FINGERS') {
-        if (!appState.isColorPickerOpen) {
-            openColorPicker(fingerPos);
-        }
-    } else if (appState.isColorPickerOpen && !isPinching) {
-        closeColorPicker();
-    }
-
-    // -- Thumbs Gestures (Undo/Redo) --
-    if (pose === 'THUMBS_DOWN') {
-        if (enteredNewPose) {
-            performUndo();
-            appState.undoHoldStart = performance.now();
-        } else if (appState.undoHoldStart > 0 && performance.now() - appState.undoHoldStart > UNDO_REPEAT_DELAY) {
-            if (performance.now() - appState.lastUndoTime > UNDO_REPEAT_INTERVAL) {
-                performUndo();
-                appState.lastUndoTime = performance.now();
-            }
-        }
-    } else {
-        appState.undoHoldStart = 0;
-    }
-
-    if (pose === 'THUMBS_UP') {
-        if (enteredNewPose) {
-            performRedo();
-            appState.redoHoldStart = performance.now();
-        } else if (appState.redoHoldStart > 0 && performance.now() - appState.redoHoldStart > UNDO_REPEAT_DELAY) {
-            if (performance.now() - appState.lastRedoTime > UNDO_REPEAT_INTERVAL) {
-                performRedo();
-                appState.lastRedoTime = performance.now();
-            }
-        }
-    } else {
-        appState.redoHoldStart = 0;
+        updateFistProgress(fingerPos, 0);
     }
 
     // -- Point -> Drawing --
     if (pose === 'POINT') {
         if (!appState.wasPointing) {
             saveCanvasState();
+            handState.posBuffer = [];
         }
         appState.wasPointing = true;
+        trackingLossFrames = 0;
     } else {
         if (appState.wasPointing) {
-            endStroke();
+            // Peace sign (idle) -> instant stroke end, no grace period
+            if (isIdleGesture(pose as any)) {
+                endStroke();
+                appState.wasPointing = false;
+                trackingLossFrames = 0;
+            } else {
+                trackingLossFrames++;
+                if (trackingLossFrames > MAX_GRACE_FRAMES) {
+                    endStroke();
+                    appState.wasPointing = false;
+                    trackingLossFrames = 0;
+                }
+            }
         }
-        appState.wasPointing = false;
     }
-
-    previousPose = pose;
 }
 
 function processResults(results: any) {
@@ -161,20 +171,24 @@ function processResults(results: any) {
     skeletonCtx.save();
 
     if (!results.landmarks || results.landmarks.length === 0) {
-        // Hand out of frame — check if this is disrupting functionality
-        if (appState.wasPointing) {
-            trackingLostWhileDrawing = true;
-            endStroke();
-            appState.wasPointing = false;
-        }
+        trackingLossFrames++;
 
-        document.getElementById('fingerCursor')!.style.display = 'none';
-        updateFistProgress({ x: 0, y: 0 }, 0);
+        // Only end stroke if tracking is lost for a sustained period (grace period)
+        if (trackingLossFrames > MAX_GRACE_FRAMES) {
+            if (appState.wasPointing) {
+                trackingLostWhileDrawing = true;
+                endStroke();
+                appState.wasPointing = false;
+            }
 
-        if (trackingLostWhileDrawing) {
-            if (performance.now() - lastToastTime > TOAST_COOLDOWN) {
-                showToast('Hand out of frame — move your hand into the camera view', true);
-                lastToastTime = performance.now();
+            document.getElementById('fingerCursor')!.style.display = 'none';
+            updateFistProgress({ x: 0, y: 0 }, 0);
+
+            if (trackingLostWhileDrawing) {
+                if (performance.now() - lastToastTime > TOAST_COOLDOWN) {
+                    showToast('Hand out of frame. Move your hand into the camera view', true);
+                    lastToastTime = performance.now();
+                }
             }
         }
 
@@ -182,7 +196,8 @@ function processResults(results: any) {
         return;
     }
 
-    // Hand detected — reset disruption tracker
+    // Hand detected: reset grace period and disruption tracker
+    trackingLossFrames = 0;
     trackingLostWhileDrawing = false;
 
     const converted = results.landmarks.map((hand: any) =>
@@ -201,13 +216,13 @@ function processResults(results: any) {
     let isDisrupted = false;
     if (results.handednesses && results.handednesses.length > 0) {
         const conf = results.handednesses[0][0].score;
-        if (conf < 0.65) {
+        if (conf < 0.75) {
             isDisrupted = true;
             if (disruptedSince === 0) {
                 disruptedSince = performance.now();
             } else if (performance.now() - disruptedSince > DISRUPTION_THRESHOLD) {
                 if (performance.now() - lastToastTime > TOAST_COOLDOWN) {
-                    showToast('Poor lighting — try moving to a brighter area', true);
+                    showToast('Poor lighting. Try moving to a brighter area', true);
                     lastToastTime = performance.now();
                 }
             }
@@ -217,7 +232,7 @@ function processResults(results: any) {
                 disruptedSince = performance.now();
             } else if (performance.now() - disruptedSince > DISRUPTION_THRESHOLD) {
                 if (performance.now() - lastToastTime > TOAST_COOLDOWN) {
-                    showToast('Hand at edge of frame — center your hand', true);
+                    showToast('Hand at edge of frame. Center your hand', true);
                     lastToastTime = performance.now();
                 }
             }
@@ -232,19 +247,26 @@ function processResults(results: any) {
 
     updateVelocity(landmarks);
 
-    const pose = isHandMovingFast() ? 'NEUTRAL' : getHandPose(landmarks);
+    // Get raw pose and refine based on movement
+    let pose = getHandPose(landmarks);
 
     const indexTip = landmarks[8];
+
+    // -- ADAPTIVE FLOW: Always allow smoothing, but handle disruption gracefully --
     const smoothedPos = getSmoothedPosition(handState.posBuffer, indexTip.x, indexTip.y);
 
     updateGestureState(pose, landmarks, smoothedPos);
 
-    if (appState.isColorPickerOpen) {
-        updatePickerHighlight(smoothedPos);
-    }
+    // Picker highlight is now handled inside updateGestureState via pinch palette
 
-    if (pose === 'POINT') {
+    // DRAWING: Only draw if we are in POINT pose OR within the sticky grace period, AND palette is closed
+    if (!appState.isColorPickerOpen && (pose === 'POINT' || (appState.wasPointing && trackingLossFrames > 0))) {
         drawStroke(smoothedPos.x, smoothedPos.y);
+    } else if (appState.isColorPickerOpen && appState.wasPointing) {
+        // Force-cancel any active stroke if the palette pops up while drawing
+        endStroke();
+        appState.wasPointing = false;
+        trackingLossFrames = 0;
     }
 
     const skelColor = getSkeletonColor(pose);
@@ -319,6 +341,7 @@ async function init() {
         drawingUtils = new DrawingUtils(skeletonCtx);
 
         console.log('Doodle modular initialized successfully.');
+        showTutorialIfNeeded();
         requestAnimationFrame(detectLoop);
 
     } catch (err: any) {
