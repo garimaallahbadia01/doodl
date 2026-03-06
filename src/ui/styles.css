@@ -20,19 +20,25 @@
     --sidebar-width: 60px;
     --transition-fast: 150ms ease;
     --elevation-shadow: 0 4px 20px rgba(67, 64, 61, 0.08), 0 2px 6px rgba(67, 64, 61, 0.04);
+    --icon-filter: none;
+    --icon-active-filter: invert(1);
+    --btn-hover-bg: #F0F0F0;
 }
 
 body.dark-theme {
-    --bg-app: #141414;
-    --bg-surface: #1E1E1E;
-    --border-panel: #333333;
-    --text-primary: #F0F0F0;
-    --icon-inactive: #888888;
-    --icon-active-bg: #333333;
-    --icon-active-fg: #FFFFFF;
-    --divider: #333333;
+    --bg-app: #43403D;
+    --bg-surface: #524F4C;
+    --border-panel: #6D6965;
+    --text-primary: #F7F6F2;
+    --icon-inactive: #A0A0A0;
+    --icon-active-bg: #43403D;
+    --icon-active-fg: #F7F6F2;
+    --divider: #6D6965;
     --swatch-glow: rgba(252, 148, 149, 0.55);
-    --elevation-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
+    --elevation-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+    --icon-filter: invert(0.95);
+    --icon-active-filter: invert(0.95);
+    --btn-hover-bg: #43403D;
 }
 
 /* ── Reset & Base ── */
@@ -158,21 +164,17 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+    transition: background var(--transition-fast), color var(--transition-fast);
     z-index: 100;
 }
 
 .theme-toggle-btn:hover {
     color: var(--text-primary);
-    transform: scale(1.05);
-}
-
-.theme-toggle-btn:active {
-    transform: scale(0.95);
+    background: var(--btn-hover-bg);
 }
 
 .sidebar-btn:hover {
-    background: #F0F0F0;
+    background: var(--btn-hover-bg);
 }
 
 .sidebar-btn.active {
@@ -185,6 +187,7 @@ body {
     height: 20px;
     object-fit: contain;
     opacity: 0.55;
+    filter: var(--icon-filter);
     transition: opacity var(--transition-fast), filter var(--transition-fast);
 }
 
@@ -194,7 +197,7 @@ body {
 
 .sidebar-btn.active .sidebar-icon {
     opacity: 1;
-    filter: invert(1);
+    filter: var(--icon-active-filter);
 }
 
 /* ══════════════════════════════════════════════════════
