@@ -7,6 +7,7 @@
     <title>Doodle</title>
     <link rel="stylesheet" href="/src/ui/styles.css">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 </head>
 
 <body>
@@ -155,10 +156,8 @@
 
             <!-- Loading Overlay -->
             <div id="loadingOverlay">
-                <div class="loading-anim-container">
-                    <img id="loadingLogoIcon" src="/favicon.svg" class="loading-anim-icon" alt="Doodle Cloud">
-                    <img id="loadingLogoText" src="/doodle.svg" class="loading-anim-text" alt="Doodle Text">
-                </div>
+                <lottie-player src="/Logo-2-remix.json" background="transparent" speed="1"
+                    style="width: 250px; height: 100px;" loop autoplay></lottie-player>
                 <span class="loading-status-text">Loading hand tracking model</span>
             </div>
         </div>

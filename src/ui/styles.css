@@ -619,63 +619,8 @@ body {
     pointer-events: none;
 }
 
-.loading-anim-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 50px;
-    overflow: hidden;
-}
-
-.loading-anim-icon {
-    width: 48px;
-    height: 48px;
-    object-fit: contain;
-    flex-shrink: 0;
-    animation: loadingFloat 2s ease-in-out infinite;
-}
-
-.loading-anim-text {
-    width: 0;
-    height: 24px;
-    object-fit: contain;
-    opacity: 0;
-    margin-left: 0;
-    animation: revealLoadingText 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.3s;
-}
-
-body.dark-theme .loading-anim-text {
-    filter: invert(1);
-}
-
 .loading-status-text {
     animation: pulseText 2s ease-in-out infinite;
-}
-
-@keyframes loadingFloat {
-
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-4px);
-    }
-}
-
-@keyframes revealLoadingText {
-    0% {
-        width: 0;
-        opacity: 0;
-        margin-left: 0;
-    }
-
-    100% {
-        width: 86px;
-        opacity: 1;
-        margin-left: 14px;
-    }
 }
 
 @keyframes pulseText {
