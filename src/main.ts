@@ -308,6 +308,7 @@ function detectLoop() {
 }
 
 async function init() {
+    const startTime = Date.now();
     try {
         video = document.getElementById('webcam') as HTMLVideoElement;
         skeletonCanvas = document.getElementById('skeletonCanvas') as HTMLCanvasElement;
@@ -349,8 +350,14 @@ async function init() {
         showToast('Error: ' + err.message, true, 8000);
         loadingOverlay.querySelector('span')!.textContent = 'Failed: ' + err.message;
     } finally {
-        loadingOverlay.style.opacity = '0';
-        setTimeout(() => loadingOverlay.style.display = 'none', 500);
+        const elapsed = Date.now() - startTime;
+        const minLoadingTime = 3000;
+        const remaining = Math.max(0, minLoadingTime - elapsed);
+
+        setTimeout(() => {
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => loadingOverlay.style.display = 'none', 500);
+        }, remaining);
     }
 }
 

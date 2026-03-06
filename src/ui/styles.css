@@ -602,7 +602,8 @@ body {
     position: absolute;
     inset: 0;
     z-index: 9000;
-    background: var(--bg-app);
+    background: #F3F1ED;
+    /* Always light to match the SVG animation */
     display: flex;
     flex-direction: column;
     align-items: center;
