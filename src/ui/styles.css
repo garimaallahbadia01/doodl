@@ -23,6 +23,15 @@
     --icon-filter: none;
     --icon-active-filter: invert(1);
     --btn-hover-bg: #F0F0F0;
+
+    /* Layout & Sizing Tokens (Optimized for <= 1920px Default) */
+    --sidebar-width: 56px;
+    --btn-size: 38px;
+    --icon-size: 18px;
+    --swatch-size: 20px;
+    --logo-box-size: 34px;
+    --logo-img-size: 26px;
+    --radius-btn: 8px;
 }
 
 body.dark-theme {
@@ -112,15 +121,15 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    width: var(--logo-box-size);
+    height: var(--logo-box-size);
     padding: 4px;
     margin-bottom: 0px;
 }
 
 .sidebar-logo img {
-    width: 28px;
-    height: 28px;
+    width: var(--logo-img-size);
+    height: var(--logo-img-size);
     object-fit: contain;
 }
 
@@ -143,8 +152,8 @@ body {
 
 /* ── Sidebar Buttons ── */
 .sidebar-btn {
-    width: 40px;
-    height: 40px;
+    width: var(--btn-size);
+    height: var(--btn-size);
     border-radius: var(--radius-btn);
     border: none;
     background: transparent;
@@ -189,9 +198,10 @@ body {
 }
 
 /* Icon Styling */
-.sidebar-icon {
-    width: 20px;
-    height: 20px;
+.sidebar-icon,
+.feather {
+    width: var(--icon-size);
+    height: var(--icon-size);
     object-fit: contain;
     opacity: 0.55;
     filter: var(--icon-filter);
@@ -265,8 +275,8 @@ body {
    COLOR SWATCHES
    ══════════════════════════════════════════════════════ */
 .swatch {
-    width: 22px;
-    height: 22px;
+    width: var(--swatch-size);
+    height: var(--swatch-size);
     border-radius: 50%;
     border: none;
     cursor: pointer;
@@ -816,14 +826,41 @@ body {
 }
 
 /* ══════════════════════════════════════════════════════
-   RESPONSIVE DESIGN (MOBILE / TABLET)
+   RESPONSIVE SCALING (MOBILE TO ULTRAWIDE)
    ══════════════════════════════════════════════════════ */
+
+/* Larger Monitors (e.g. 2560x1440 iMacs/Ultrawides) */
+@media (min-width: 2000px) {
+    :root {
+        --sidebar-width: 68px;
+        --btn-size: 48px;
+        --icon-size: 24px;
+        --logo-box-size: 48px;
+        --logo-img-size: 36px;
+        --swatch-size: 28px;
+        --radius-btn: 10px;
+    }
+}
+
 @media (max-width: 850px) {
+    :root {
+        --btn-size: 36px;
+        --icon-size: 18px;
+        --logo-box-size: 32px;
+        --logo-img-size: 24px;
+        --swatch-size: 20px;
+    }
+
     #container {
         flex-direction: column-reverse;
         /* Sidebar docked to bottom */
         padding: 16px;
         gap: 12px;
+    }
+
+    .sidebar-column {
+        width: 100%;
+        height: auto;
     }
 
     #sidebar {
@@ -854,6 +891,10 @@ body {
         gap: 6px;
     }
 
+    .sidebar-group[style*="padding: 12px 0"] {
+        padding: 0 !important;
+    }
+
     .sidebar-divider {
         width: 1px;
         height: 24px;
@@ -878,8 +919,8 @@ body {
         position: absolute;
         top: 16px;
         left: 16px;
-        width: 40px;
-        height: 40px;
+        width: var(--btn-size);
+        height: var(--btn-size);
         z-index: 300;
         border-radius: var(--radius-btn);
     }
@@ -898,25 +939,7 @@ body {
         z-index: 200;
     }
 
-    /* Reduce logo size slightly to save horizontal real estate */
     .sidebar-logo {
-        width: 32px;
-        height: 32px;
         padding: 2px;
-    }
-
-    .sidebar-logo img {
-        width: 24px;
-        height: 24px;
-    }
-
-    .sidebar-btn {
-        width: 36px;
-        height: 36px;
-    }
-
-    .swatch {
-        width: 20px;
-        height: 20px;
     }
 }
