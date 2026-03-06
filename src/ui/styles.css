@@ -99,66 +99,21 @@ body {
     overflow: visible;
 }
 
-/* Sidebar Logo Wrapper */
+/* Sidebar Logo */
 .sidebar-logo {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
+    width: 36px;
     height: 36px;
-    padding: 6px;
-    margin: 4px 6px;
-    border-radius: 20px;
-    background: transparent;
-    cursor: pointer;
-    overflow: hidden;
-    transition: background var(--transition-fast), width 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
-    box-sizing: border-box;
-    cursor: default;
-    width: 40px;
+    padding: 4px;
+    margin-bottom: 0px;
 }
 
-/* Base states for the two inner SVGs */
-.logo-icon {
+.sidebar-logo img {
     width: 28px;
     height: 28px;
     object-fit: contain;
-    flex-shrink: 0;
-    transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.logo-text {
-    width: 0px;
-    height: 18px;
-    object-fit: contain;
-    opacity: 0;
-    margin-left: 0px;
-    transition: width 300ms cubic-bezier(0.34, 1.56, 0.64, 1),
-        opacity 300ms cubic-bezier(0.34, 1.56, 0.64, 1),
-        margin 300ms cubic-bezier(0.34, 1.56, 0.64, 1),
-        filter var(--transition-fast);
-}
-
-/* Hovering the logo wrapper expands it and reveals the text */
-.sidebar-logo:hover {
-    width: 130px;
-    background: var(--bg-surface);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.sidebar-logo:hover .logo-icon {
-    transform: rotate(-10deg) scale(1.05);
-}
-
-.sidebar-logo:hover .logo-text {
-    width: 68px;
-    /* Original doodle.svg width */
-    opacity: 1;
-    margin-left: 8px;
-}
-
-/* Ensure the text is visible under dark mode by inverting it if needed */
-body.dark-theme .logo-text {
-    filter: invert(1);
 }
 
 /* Sidebar Groups */
@@ -664,18 +619,74 @@ body.dark-theme .logo-text {
     pointer-events: none;
 }
 
-.spinner {
-    width: 36px;
-    height: 36px;
-    border: 3px solid var(--border-panel);
-    border-top-color: #43403D;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+.loading-anim-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 50px;
+    overflow: hidden;
 }
 
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
+.loading-anim-icon {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    flex-shrink: 0;
+    animation: loadingFloat 2s ease-in-out infinite;
+}
+
+.loading-anim-text {
+    width: 0;
+    height: 24px;
+    object-fit: contain;
+    opacity: 0;
+    margin-left: 0;
+    animation: revealLoadingText 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.3s;
+}
+
+body.dark-theme .loading-anim-text {
+    filter: invert(1);
+}
+
+.loading-status-text {
+    animation: pulseText 2s ease-in-out infinite;
+}
+
+@keyframes loadingFloat {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
+@keyframes revealLoadingText {
+    0% {
+        width: 0;
+        opacity: 0;
+        margin-left: 0;
+    }
+
+    100% {
+        width: 86px;
+        opacity: 1;
+        margin-left: 14px;
+    }
+}
+
+@keyframes pulseText {
+
+    0%,
+    100% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
     }
 }
 
