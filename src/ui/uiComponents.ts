@@ -310,24 +310,23 @@ export function setupDraggablePIP(el: HTMLElement) {
     let isDragging = false;
     let dragStartX: number, dragStartY: number, pipStartLeft: number, pipStartTop: number;
 
-    el.addEventListener('mousedown', (e) => {
+    const startDrag = (x: number, y: number) => {
         const rect = el.getBoundingClientRect();
-        if (e.clientX > rect.right - 24 && e.clientY > rect.bottom - 24) {
+        if (x > rect.right - 24 && y > rect.bottom - 24) {
             return; // Allow native CSS resize instead of drag
         }
         isDragging = true;
-        dragStartX = e.clientX;
-        dragStartY = e.clientY;
+        dragStartX = x;
+        dragStartY = y;
         pipStartLeft = rect.left;
         pipStartTop = rect.top;
         el.classList.add('dragging');
-        e.preventDefault();
-    });
+    };
 
-    document.addEventListener('mousemove', (e) => {
+    const doDrag = (x: number, y: number) => {
         if (!isDragging) return;
-        let newLeft = pipStartLeft + (e.clientX - dragStartX);
-        let newTop = pipStartTop + (e.clientY - dragStartY);
+        let newLeft = pipStartLeft + (x - dragStartX);
+        let newTop = pipStartTop + (y - dragStartY);
 
         const padding = 20;
         newLeft = Math.max(padding, Math.min(newLeft, window.innerWidth - el.offsetWidth - padding));
@@ -337,10 +336,34 @@ export function setupDraggablePIP(el: HTMLElement) {
         el.style.top = `${newTop}px`;
         el.style.bottom = 'auto';
         el.style.right = 'auto';
-    });
+    };
 
-    document.addEventListener('mouseup', () => {
+    const stopDrag = () => {
         isDragging = false;
         el.classList.remove('dragging');
+    };
+
+    // Mouse events
+    el.addEventListener('mousedown', (e) => {
+        startDrag(e.clientX, e.clientY);
+        e.preventDefault();
     });
+    document.addEventListener('mousemove', (e) => doDrag(e.clientX, e.clientY));
+    document.addEventListener('mouseup', stopDrag);
+
+    // Touch events for mobile/tablet
+    el.addEventListener('touchstart', (e) => {
+        const touch = e.touches[0];
+        startDrag(touch.clientX, touch.clientY);
+        // Do not prevent default to allow scrolling if needed elsewhere, but handled carefully
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        const touch = e.touches[0];
+        doDrag(touch.clientX, touch.clientY);
+        e.preventDefault(); // Prevent scrolling while dragging
+    }, { passive: false });
+
+    document.addEventListener('touchend', stopDrag);
 }
