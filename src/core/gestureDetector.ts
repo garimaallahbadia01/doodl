@@ -134,12 +134,9 @@ export function detectPinch(landmarks: any[]) {
     const pinchDist = Math.hypot(indexTip.x - thumbTip.x, indexTip.y - thumbTip.y);
     const normalizedPinch = pinchDist / handSize;
 
-    // To prevent stray thumbs from opening the palette,
-    // ensure both thumb and index are somewhat curled/bent inward
-    const isThumbCurled = !isThumbExtended(landmarks);
-    const isIndexCurled = !isFingerExtended(landmarks, 8, 6, INDEX_EXTENSION_RATIO * 0.9);
-
-    if (!isPinching && normalizedPinch < PINCH_START_THRESHOLD && isThumbCurled && isIndexCurled) {
+    // We don't strictly require index/thumb to be 'curled' according to the other algorithms
+    // because when index and thumb touch, they are actually mostly extended towards each other.
+    if (!isPinching && normalizedPinch < PINCH_START_THRESHOLD) {
         isPinching = true;
         pinchReleaseStartTime = 0;
     } else if (isPinching && normalizedPinch > PINCH_END_THRESHOLD) {
