@@ -279,7 +279,7 @@ function processResults(results: any) {
         }));
         if (drawingUtils) {
             drawingUtils.drawConnectors(mirrored, HandLandmarker.HAND_CONNECTIONS, { color: skelColor, lineWidth: 2 });
-            drawingUtils.drawLandmarks(mirrored, { color: '#0f1419', radius: 1.5 });
+            drawingUtils.drawLandmarks(mirrored, { color: appState.isDarkMode ? '#F7F6F2' : '#0f1419', radius: 1.5 });
         }
     }
 

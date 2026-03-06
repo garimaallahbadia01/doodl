@@ -22,6 +22,19 @@
     --elevation-shadow: 0 4px 20px rgba(67, 64, 61, 0.08), 0 2px 6px rgba(67, 64, 61, 0.04);
 }
 
+body.dark-theme {
+    --bg-app: #141414;
+    --bg-surface: #1E1E1E;
+    --border-panel: #333333;
+    --text-primary: #F0F0F0;
+    --icon-inactive: #888888;
+    --icon-active-bg: #333333;
+    --icon-active-fg: #FFFFFF;
+    --divider: #333333;
+    --swatch-glow: rgba(252, 148, 149, 0.55);
+    --elevation-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
 /* ── Reset & Base ── */
 *,
 *::before,
@@ -127,6 +140,35 @@ body {
     justify-content: center;
     transition: background var(--transition-fast);
     position: relative;
+}
+
+/* Theme Toggle Button (Below Sidebar) */
+.theme-toggle-btn {
+    position: absolute;
+    bottom: var(--spacing-page);
+    left: var(--spacing-page);
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-btn);
+    border: none;
+    background: var(--bg-surface);
+    box-shadow: var(--elevation-shadow);
+    color: var(--icon-inactive);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--transition-fast), color var(--transition-fast);
+    z-index: 100;
+}
+
+.theme-toggle-btn:hover {
+    color: var(--text-primary);
+    background: #F0F0F0;
+}
+
+body.dark-theme .theme-toggle-btn:hover {
+    background: #2C2A27;
 }
 
 .sidebar-btn:hover {
