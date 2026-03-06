@@ -807,3 +807,107 @@ body {
     border-color: #2C2A27;
     box-shadow: var(--elevation-shadow);
 }
+
+/* ══════════════════════════════════════════════════════
+   RESPONSIVE DESIGN (MOBILE / TABLET)
+   ══════════════════════════════════════════════════════ */
+@media (max-width: 850px) {
+    #container {
+        flex-direction: column-reverse;
+        /* Sidebar docked to bottom */
+        padding: 16px;
+        gap: 12px;
+    }
+
+    #sidebar {
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        justify-content: flex-start;
+        padding: 8px 12px;
+        gap: 8px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        border-radius: 16px;
+    }
+
+    /* Hide scrollbars for the horizontal toolbar */
+    #sidebar::-webkit-scrollbar {
+        display: none;
+    }
+
+    #sidebar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .sidebar-group {
+        flex-direction: row;
+        padding: 0 4px;
+        gap: 6px;
+    }
+
+    .sidebar-divider {
+        width: 1px;
+        height: 24px;
+        margin: auto 0;
+    }
+
+    .brush-slider-wrap {
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+    }
+
+    #brushSlider {
+        writing-mode: horizontal-tb;
+        direction: ltr;
+        width: 80px;
+        height: 6px;
+    }
+
+    /* Move the Theme toggle out of the way on small screens */
+    .theme-toggle-btn {
+        top: 16px;
+        left: 16px;
+        bottom: auto;
+        width: 40px;
+        height: 40px;
+        z-index: 300;
+    }
+
+    /* Move PIP panel to top-right on mobile to stay out of the canvas/toolbar */
+    #pipPanel {
+        top: 16px;
+        right: 16px;
+        bottom: auto;
+        left: auto;
+        width: 140px;
+        height: 100px;
+        min-width: 100px;
+        min-height: 70px;
+        z-index: 200;
+    }
+
+    /* Reduce logo size slightly to save horizontal real estate */
+    .sidebar-logo {
+        width: 32px;
+        height: 32px;
+        padding: 2px;
+    }
+
+    .sidebar-logo img {
+        width: 24px;
+        height: 24px;
+    }
+
+    .sidebar-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .swatch {
+        width: 20px;
+        height: 20px;
+    }
+}
