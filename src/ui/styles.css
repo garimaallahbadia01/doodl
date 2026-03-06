@@ -79,14 +79,22 @@ body {
 }
 
 /* ══════════════════════════════════════════════════════
-   SIDEBAR
+   SIDEBAR & THEME COLUMN
    ══════════════════════════════════════════════════════ */
-#sidebar {
-    position: relative;
-    z-index: 200;
+.sidebar-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-self: stretch;
+    /* Stretches to align with top/bottom of canvas */
     width: var(--sidebar-width);
     flex-shrink: 0;
-    align-self: center;
+    z-index: 200;
+}
+
+#sidebar {
+    position: relative;
+    width: 100%;
     background: var(--bg-surface);
     border: 1px solid var(--border-panel);
     border-radius: var(--radius-panel);
@@ -150,13 +158,13 @@ body {
 
 /* Theme Toggle Button (Below Sidebar) */
 .theme-toggle-btn {
-    position: absolute;
-    bottom: var(--spacing-page);
-    left: var(--spacing-page);
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radius-btn);
-    border: none;
+    width: 100%;
+    height: var(--sidebar-width);
+    /* Match the width to make a perfect square */
+    border-radius: var(--radius-panel);
+    /* Same curved aesthetic as sidebar */
+    border: 1px solid var(--border-panel);
+    /* Same thin border outline */
     background: var(--bg-surface);
     box-shadow: var(--elevation-shadow);
     color: var(--icon-inactive);
@@ -164,8 +172,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background var(--transition-fast), color var(--transition-fast);
-    z-index: 100;
+    transition: background var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .theme-toggle-btn:hover {
@@ -868,12 +875,13 @@ body {
 
     /* Move the Theme toggle out of the way on small screens */
     .theme-toggle-btn {
+        position: absolute;
         top: 16px;
         left: 16px;
-        bottom: auto;
         width: 40px;
         height: 40px;
         z-index: 300;
+        border-radius: var(--radius-btn);
     }
 
 

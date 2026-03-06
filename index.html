@@ -14,89 +14,92 @@
     <div id="app">
         <div id="container">
 
-            <!-- Sidebar Toolbar (Left) -->
-            <div id="sidebar">
-                <!-- Group 1: Logo -->
-                <div class="sidebar-group">
-                    <div class="sidebar-logo">
-                        <img id="sidebarLogoImg" src="/favicon.svg" alt="Doodle" width="28" height="28">
+            <!-- Sidebar column to hold tools and theme toggle -->
+            <div class="sidebar-column">
+                <!-- Sidebar Toolbar (Left) -->
+                <div id="sidebar">
+                    <!-- Group 1: Logo -->
+                    <div class="sidebar-group">
+                        <div class="sidebar-logo">
+                            <img id="sidebarLogoImg" src="/favicon.svg" alt="Doodle" width="28" height="28">
+                        </div>
+                    </div>
+                    <div class="sidebar-divider"></div>
+
+                    <!-- Group 2: Core Tools -->
+                    <div class="sidebar-group">
+                        <button class="sidebar-btn active" id="pencilBtn" title="Draw">
+                            <img src="/Tool-icons/pencil-icon.svg" alt="Draw" class="sidebar-icon">
+                        </button>
+                        <button class="sidebar-btn" id="eraserBtn" title="Eraser">
+                            <img src="/Tool-icons/eraser-icon.svg" alt="Eraser" class="sidebar-icon">
+                        </button>
+                    </div>
+
+                    <div class="sidebar-divider"></div>
+
+                    <!-- Group 3: Brush Size -->
+                    <div class="sidebar-group">
+                        <div class="brush-slider-wrap">
+                            <input type="range" id="brushSlider" min="1" max="20" value="3" orient="vertical"
+                                title="Brush Size">
+                            <div class="brush-preview-dot" id="brushPreviewDot"></div>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-divider"></div>
+
+                    <!-- Group 4: Color Swatches -->
+                    <div class="sidebar-group" style="padding: 12px 0; gap: 6px;">
+                        <div class="swatch active" data-color="#000000" title="Black"></div>
+                        <div class="swatch swatch-white" data-color="#FFFFFF" title="White"></div>
+                        <div class="swatch" data-color="#FF3B30" title="Red"></div>
+                        <div class="swatch" data-color="#FF9500" title="Orange"></div>
+                        <div class="swatch" data-color="#34C759" title="Green"></div>
+                        <div class="swatch" data-color="#007AFF" title="Blue"></div>
+                        <div class="swatch" data-color="#AF52DE" title="Purple"></div>
+                    </div>
+
+                    <div class="sidebar-divider"></div>
+
+                    <!-- Group 5: History -->
+                    <div class="sidebar-group">
+                        <button class="sidebar-btn" id="undoBtn" title="Undo">
+                            <img src="/Tool-icons/undo-icon.svg" alt="Undo" class="sidebar-icon">
+                        </button>
+                        <button class="sidebar-btn" id="redoBtn" title="Redo">
+                            <img src="/Tool-icons/redo-icon.svg" alt="Redo" class="sidebar-icon">
+                        </button>
+                    </div>
+
+                    <div class="sidebar-divider"></div>
+
+                    <!-- Group 6: Utilities -->
+                    <div class="sidebar-group">
+                        <button class="sidebar-btn" id="gridBtn" title="Grid">
+                            <img src="/Tool-icons/grid-icon.svg" alt="Grid" class="sidebar-icon">
+                        </button>
+                        <button class="sidebar-btn" id="cameraBtn" title="Camera">
+                            <img src="/Tool-icons/camera-icon.svg" alt="Camera" class="sidebar-icon">
+                        </button>
+                        <button class="sidebar-btn" id="clearBtn" title="Clear Canvas">
+                            <img src="/Tool-icons/clear-icon.svg" alt="Clear" class="sidebar-icon">
+                        </button>
+                        <button class="sidebar-btn" id="exportBtn" title="Export">
+                            <img src="/Tool-icons/download-icon.svg" alt="Export" class="sidebar-icon">
+                        </button>
                     </div>
                 </div>
-                <div class="sidebar-divider"></div>
 
-                <!-- Group 2: Core Tools -->
-                <div class="sidebar-group">
-                    <button class="sidebar-btn active" id="pencilBtn" title="Draw">
-                        <img src="/Tool-icons/pencil-icon.svg" alt="Draw" class="sidebar-icon">
-                    </button>
-                    <button class="sidebar-btn" id="eraserBtn" title="Eraser">
-                        <img src="/Tool-icons/eraser-icon.svg" alt="Eraser" class="sidebar-icon">
-                    </button>
-                </div>
-
-                <div class="sidebar-divider"></div>
-
-                <!-- Group 3: Brush Size -->
-                <div class="sidebar-group">
-                    <div class="brush-slider-wrap">
-                        <input type="range" id="brushSlider" min="1" max="20" value="3" orient="vertical"
-                            title="Brush Size">
-                        <div class="brush-preview-dot" id="brushPreviewDot"></div>
-                    </div>
-                </div>
-
-                <div class="sidebar-divider"></div>
-
-                <!-- Group 4: Color Swatches -->
-                <div class="sidebar-group" style="padding: 12px 0; gap: 6px;">
-                    <div class="swatch active" data-color="#000000" title="Black"></div>
-                    <div class="swatch swatch-white" data-color="#FFFFFF" title="White"></div>
-                    <div class="swatch" data-color="#FF3B30" title="Red"></div>
-                    <div class="swatch" data-color="#FF9500" title="Orange"></div>
-                    <div class="swatch" data-color="#34C759" title="Green"></div>
-                    <div class="swatch" data-color="#007AFF" title="Blue"></div>
-                    <div class="swatch" data-color="#AF52DE" title="Purple"></div>
-                </div>
-
-                <div class="sidebar-divider"></div>
-
-                <!-- Group 5: History -->
-                <div class="sidebar-group">
-                    <button class="sidebar-btn" id="undoBtn" title="Undo">
-                        <img src="/Tool-icons/undo-icon.svg" alt="Undo" class="sidebar-icon">
-                    </button>
-                    <button class="sidebar-btn" id="redoBtn" title="Redo">
-                        <img src="/Tool-icons/redo-icon.svg" alt="Redo" class="sidebar-icon">
-                    </button>
-                </div>
-
-                <div class="sidebar-divider"></div>
-
-                <!-- Group 6: Utilities -->
-                <div class="sidebar-group">
-                    <button class="sidebar-btn" id="gridBtn" title="Grid">
-                        <img src="/Tool-icons/grid-icon.svg" alt="Grid" class="sidebar-icon">
-                    </button>
-                    <button class="sidebar-btn" id="cameraBtn" title="Camera">
-                        <img src="/Tool-icons/camera-icon.svg" alt="Camera" class="sidebar-icon">
-                    </button>
-                    <button class="sidebar-btn" id="clearBtn" title="Clear Canvas">
-                        <img src="/Tool-icons/clear-icon.svg" alt="Clear" class="sidebar-icon">
-                    </button>
-                    <button class="sidebar-btn" id="exportBtn" title="Export">
-                        <img src="/Tool-icons/download-icon.svg" alt="Export" class="sidebar-icon">
-                    </button>
-                </div>
+                <!-- Theme Toggle (Bottom Left, under sidebar) -->
+                <button id="themeToggleBtn" class="theme-toggle-btn" title="Toggle Dark Mode">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="feather feather-moon">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
             </div>
-
-            <!-- Theme Toggle (Bottom Left, under sidebar) -->
-            <button id="themeToggleBtn" class="theme-toggle-btn" title="Toggle Dark Mode">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    class="feather feather-moon">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                </svg>
-            </button>
 
             <!-- Drawing Canvas (Main Stage) -->
             <div id="drawingPanel">
