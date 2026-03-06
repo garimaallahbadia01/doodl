@@ -148,30 +148,7 @@ body {
     position: relative;
 }
 
-/* Theme Toggle Button (Below Sidebar) */
-.theme-toggle-btn {
-    position: absolute;
-    bottom: var(--spacing-page);
-    left: var(--spacing-page);
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radius-btn);
-    border: none;
-    background: var(--bg-surface);
-    box-shadow: var(--elevation-shadow);
-    color: var(--icon-inactive);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background var(--transition-fast), color var(--transition-fast);
-    z-index: 100;
-}
 
-.theme-toggle-btn:hover {
-    color: var(--text-primary);
-    background: var(--btn-hover-bg);
-}
 
 .sidebar-btn:hover {
     background: var(--btn-hover-bg);
@@ -866,15 +843,6 @@ body {
         height: 6px;
     }
 
-    /* Move the Theme toggle out of the way on small screens */
-    .theme-toggle-btn {
-        top: 16px;
-        left: 16px;
-        bottom: auto;
-        width: 40px;
-        height: 40px;
-        z-index: 300;
-    }
 
     /* Move PIP panel to top-right on mobile to stay out of the canvas/toolbar */
     #pipPanel {
