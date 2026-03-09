@@ -1,6 +1,6 @@
 import { appState } from './appState';
 import { endStroke } from '../drawing/drawingCanvas';
-import { updateFistProgress, showToast, showCameraDeniedOverlay } from '../ui/uiComponents';
+import { updateGestureProgress, showToast, showCameraDeniedOverlay } from '../ui/uiComponents';
 
 export let isCameraActive = true;
 export let videoEl: HTMLVideoElement | null = null;
@@ -54,7 +54,7 @@ export async function stopCamera() {
     skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
     document.getElementById('fingerCursor')!.style.display = 'none';
     if (appState.wasPointing) { endStroke(); appState.wasPointing = false; }
-    updateFistProgress({ x: 0, y: 0 }, 0);
+    updateGestureProgress({ x: 0, y: 0 }, 0, 1, '#000');
 }
 
 export async function requestCameraAccess() {

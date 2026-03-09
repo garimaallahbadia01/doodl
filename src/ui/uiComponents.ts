@@ -1,5 +1,5 @@
 import { appState } from '../core/appState';
-import { PICKER_COLORS, COLOR_PICKER_RADIUS, SWATCH_HIT_RADIUS, FIST_HOLD_TIME, FIST_ARC_COLOR } from '../constants';
+import { PICKER_COLORS, COLOR_PICKER_RADIUS, SWATCH_HIT_RADIUS } from '../constants';
 import { clearCanvas, openExportModal, performUndo, performRedo } from '../drawing/drawingState';
 import { requestCameraAccess } from '../core/cameraManager';
 
@@ -294,18 +294,18 @@ export function showUndoRedoStatus(msg: string) {
     showToast(msg, false, 1200);
 }
 
-export function updateFistProgress(fingerPos: { x: number, y: number }, fistHoldStart: number) {
+export function updateGestureProgress(fingerPos: { x: number, y: number }, holdStartTime: number, targetTime: number, color: string) {
     if (!fistProgressEl || !fistCtx) return;
-    if (fistHoldStart <= 0) {
+    if (holdStartTime <= 0) {
         fistProgressEl.classList.remove('visible');
         return;
     }
-    const progress = Math.min((performance.now() - fistHoldStart) / FIST_HOLD_TIME, 1);
+    const progress = Math.min((performance.now() - holdStartTime) / targetTime, 1);
     fistProgressEl.classList.add('visible');
     fistProgressEl.style.transform = `translate(${fingerPos.x - 24}px, ${fingerPos.y - 24}px)`;
 
     fistCtx.clearRect(0, 0, 48, 48);
-    fistCtx.strokeStyle = FIST_ARC_COLOR;
+    fistCtx.strokeStyle = color;
     fistCtx.globalAlpha = 0.9;
     fistCtx.lineWidth = 3;
     fistCtx.lineCap = 'round';

@@ -38,6 +38,8 @@ export interface AppState {
     fistHoldStart: number;
     lastUndoTime: number;
     lastRedoTime: number;
+    undoHoldStart: number;
+    redoHoldStart: number;
     wasHoldingUndo?: boolean;
     wasHoldingRedo?: boolean;
     isDarkMode: boolean;

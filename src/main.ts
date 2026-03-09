@@ -3,12 +3,12 @@ import { getHandPose, updateVelocity, detectPinch, isPalmStable, isPinching, pal
 import { drawStroke, endStroke, handState } from './drawing/drawingCanvas';
 import { initDrawingState, saveCanvasState, performUndo, performRedo, redrawAll } from './drawing/drawingState';
 import { appState } from './core/appState';
-import { initUIComponents, setMode, updateFistProgress, clearCanvasWithFlash, openColorPicker, closeColorPicker, confirmColor, updatePickerHighlight, showToast } from './ui/uiComponents';
+import { initUIComponents, setMode, updateGestureProgress, clearCanvasWithFlash, openColorPicker, closeColorPicker, confirmColor, updatePickerHighlight, showToast } from './ui/uiComponents';
 import { initHandVisualizer, updateCursor, getSkeletonColor, getSmoothedPosition } from './ui/handVisualizer';
 import { showTutorialIfNeeded } from './ui/tutorialModal';
 // @ts-ignore
 import { DrawingUtils, HandLandmarker } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs';
-import { PALM_HOLD_TIME, FIST_HOLD_TIME, UNDO_REPEAT_INTERVAL } from './constants';
+import { PALM_HOLD_TIME, FIST_HOLD_TIME, FIST_ARC_COLOR, UNDO_HOLD_TIME, UNDO_ARC_COLOR, REDO_HOLD_TIME, REDO_ARC_COLOR } from './constants';
 import { setupDraggablePIP } from './ui/uiComponents';
 import { initCameraManager, requestCameraAccess, isCameraActive } from './core/cameraManager';
 
@@ -100,39 +100,47 @@ function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
         pose = 'NEUTRAL'; // Treat fast movement as noise
     }
 
-    if (pose === 'THUMBS_DOWN') {
-        if (!appState.wasHoldingUndo) {
-            performUndo();
-            appState.lastUndoTime = performance.now();
-        } else if (performance.now() - appState.lastUndoTime > UNDO_REPEAT_INTERVAL) {
-            performUndo();
-            appState.lastUndoTime = performance.now();
+    // -- Thumbs Down -> Undo with Timer --
+    if (pose === 'THUMBS_DOWN' && !isHandMovingFast()) {
+        const thumbTip = landmarks[4];
+        if (appState.undoHoldStart === -1) {
+            updateGestureProgress(thumbTip, 1, 1, UNDO_ARC_COLOR); // Stay full until break
+        } else {
+            if (appState.undoHoldStart === 0) appState.undoHoldStart = performance.now();
+            updateGestureProgress(thumbTip, appState.undoHoldStart, UNDO_HOLD_TIME, UNDO_ARC_COLOR);
+            if (performance.now() - appState.undoHoldStart >= UNDO_HOLD_TIME) {
+                performUndo();
+                appState.undoHoldStart = -1;
+            }
         }
-        appState.wasHoldingUndo = true;
     } else {
-        appState.wasHoldingUndo = false;
+        appState.undoHoldStart = 0;
     }
 
-    if (pose === 'THUMBS_UP') {
-        if (!appState.wasHoldingRedo) {
-            performRedo();
-            appState.lastRedoTime = performance.now();
-        } else if (performance.now() - appState.lastRedoTime > UNDO_REPEAT_INTERVAL) {
-            performRedo();
-            appState.lastRedoTime = performance.now();
+    // -- Thumbs Up -> Redo with Timer --
+    if (pose === 'THUMBS_UP' && !isHandMovingFast()) {
+        const thumbTip = landmarks[4];
+        if (appState.redoHoldStart === -1) {
+            updateGestureProgress(thumbTip, 1, 1, REDO_ARC_COLOR); // Stay full until break
+        } else {
+            if (appState.redoHoldStart === 0) appState.redoHoldStart = performance.now();
+            updateGestureProgress(thumbTip, appState.redoHoldStart, REDO_HOLD_TIME, REDO_ARC_COLOR);
+            if (performance.now() - appState.redoHoldStart >= REDO_HOLD_TIME) {
+                performRedo();
+                appState.redoHoldStart = -1;
+            }
         }
-        appState.wasHoldingRedo = true;
     } else {
-        appState.wasHoldingRedo = false;
+        appState.redoHoldStart = 0;
     }
 
     // -- Fist held -> Clear Canvas --
     if (pose === 'FIST') {
         if (appState.fistHoldStart === -1) {
-            updateFistProgress(fingerPos, 0);
+            updateGestureProgress(fingerPos, 1, 1, FIST_ARC_COLOR);
         } else {
             if (appState.fistHoldStart === 0) appState.fistHoldStart = performance.now();
-            updateFistProgress(fingerPos, appState.fistHoldStart);
+            updateGestureProgress(fingerPos, appState.fistHoldStart, FIST_HOLD_TIME, FIST_ARC_COLOR);
             if (performance.now() - appState.fistHoldStart >= FIST_HOLD_TIME) {
                 clearCanvasWithFlash();
                 appState.fistHoldStart = -1;
@@ -140,7 +148,11 @@ function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
         }
     } else {
         appState.fistHoldStart = 0;
-        updateFistProgress(fingerPos, 0);
+    }
+
+    // Global reset if no timed gesture is active
+    if (pose !== 'FIST' && pose !== 'THUMBS_UP' && pose !== 'THUMBS_DOWN') {
+        updateGestureProgress(fingerPos, 0, 1, '#000');
     }
 
     // -- Point -> Drawing --
@@ -192,7 +204,7 @@ function processResults(results: any) {
             }
 
             document.getElementById('fingerCursor')!.style.display = 'none';
-            updateFistProgress({ x: 0, y: 0 }, 0);
+            updateGestureProgress({ x: 0, y: 0 }, 0, 1, '#000');
 
             if (trackingLostWhileDrawing) {
                 if (performance.now() - lastToastTime > TOAST_COOLDOWN) {

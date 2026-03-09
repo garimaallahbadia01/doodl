@@ -23,5 +23,7 @@ export const appState: AppState = {
     fistHoldStart: 0,
     lastUndoTime: 0,
     lastRedoTime: 0,
+    undoHoldStart: 0,
+    redoHoldStart: 0,
     isDarkMode: getSafeThemePref()
 };

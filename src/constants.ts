@@ -27,6 +27,10 @@ export const PALM_STABILITY_THRESHOLD = 25;
 export const PALM_HOLD_TIME = 500;
 export const FIST_HOLD_TIME = 1000;
 export const FIST_ARC_COLOR = '#FF3333';
+export const UNDO_HOLD_TIME = 800;
+export const UNDO_ARC_COLOR = '#999999';
+export const REDO_HOLD_TIME = 800;
+export const REDO_ARC_COLOR = '#4488FF';
 export const MODE_BADGE_PULSE_DURATION = 200;
 export const PICKER_COLORS = [
     '#000000', '#FFFFFF', '#FF3B30', '#FF9500',
