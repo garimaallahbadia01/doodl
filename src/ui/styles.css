@@ -383,6 +383,36 @@ body {
     max-width: 600px;
     max-height: 420px;
     cursor: grab;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+#pipPanel:hover {
+    border-color: var(--icon-inactive);
+}
+
+/* Visual resize handle in the corner */
+#pipPanel::after {
+    content: "";
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 0 12px 12px;
+    border-color: transparent transparent var(--icon-inactive) transparent;
+    pointer-events: none;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+    z-index: 50;
+}
+
+#pipPanel:hover::after {
+    opacity: 0.8;
+}
+
+#pipPanel.dragging {
+    cursor: grabbing;
 }
 
 /* Camera-off overlay inside PIP */
@@ -395,6 +425,7 @@ body {
     background: var(--bg-surface);
     color: var(--icon-inactive);
     z-index: 10;
+    pointer-events: none;
 }
 
 .pip-camera-off svg {
@@ -407,10 +438,6 @@ body {
     display: flex;
 }
 
-#pipPanel.dragging {
-    cursor: grabbing;
-}
-
 #webcam {
     width: 100%;
     height: 100%;
@@ -419,6 +446,7 @@ body {
     position: absolute;
     top: 0;
     left: 0;
+    pointer-events: none;
 }
 
 #skeletonCanvas {
@@ -427,6 +455,7 @@ body {
     position: absolute;
     top: 0;
     left: 0;
+    pointer-events: none;
 }
 
 /* ══════════════════════════════════════════════════════
