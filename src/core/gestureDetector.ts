@@ -131,7 +131,7 @@ export function isPalmStable(landmarks: any[]) {
     );
 }
 
-export function detectPinch(landmarks: any[]) {
+export function detectPinch(landmarks: any[], pose: string) {
     const thumbTip = landmarks[4];
     const indexTip = landmarks[8];
     const wrist = landmarks[0];
@@ -142,6 +142,16 @@ export function detectPinch(landmarks: any[]) {
 
     const pinchDist = Math.hypot(indexTip.x - thumbTip.x, indexTip.y - thumbTip.y);
     const normalizedPinch = pinchDist / handSize;
+
+    // Prevent pinch detection if the hand is in an explicit conflicting gesture
+    const isConflictingGesture = pose === 'FIST' || pose === 'THUMBS_UP' || pose === 'THUMBS_DOWN' || pose === 'TWO_FINGERS';
+
+    if (isConflictingGesture) {
+        // If holding a fist, force cancel any ongoing pinch
+        isPinching = false;
+        pinchReleaseStartTime = 0;
+        return;
+    }
 
     // We don't strictly require index/thumb to be 'curled' according to the other algorithms
     // because when index and thumb touch, they are actually mostly extended towards each other.

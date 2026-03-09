@@ -52,7 +52,7 @@ function resizeCanvases() {
 function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
 
     // -- Pinch Color Palette State Machine (processed first as modal) --
-    detectPinch(landmarks);
+    detectPinch(landmarks, pose);
     const palette = updatePinchPalette(landmarks, isPinching);
 
     if (palette.state === 'BROWSING' || palette.state === 'CANCELLING') {
