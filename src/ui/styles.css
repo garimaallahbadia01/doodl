@@ -465,11 +465,12 @@ body {
 }
 
 .finger-cursor.erasing {
-    width: 28px;
-    height: 28px;
-    background: url('/assets/icons/Group_10.svg') center/contain no-repeat;
-    border-radius: 0;
-    box-shadow: none;
+    width: 20px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1.5px solid var(--text-primary);
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .finger-cursor.picking {
