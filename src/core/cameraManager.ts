@@ -1,6 +1,6 @@
 import { appState } from './appState';
 import { endStroke } from '../drawing/drawingCanvas';
-import { updateFistProgress, showToast } from '../ui/uiComponents';
+import { updateFistProgress, showToast, showCameraDeniedOverlay } from '../ui/uiComponents';
 
 export let isCameraActive = true;
 export let videoEl: HTMLVideoElement | null = null;
@@ -30,7 +30,11 @@ export function initCameraManager(
                 videoEl!.srcObject = stream;
                 await videoEl!.play();
             } catch (e: any) {
-                showToast('Camera error: ' + e.message, true, 5000);
+                if (e.name === 'NotAllowedError') {
+                    showCameraDeniedOverlay();
+                } else {
+                    showToast('Camera error: ' + e.message, true, 5000);
+                }
             }
         } else {
             cameraBtn.classList.remove('active');
@@ -50,9 +54,26 @@ export function initCameraManager(
 }
 
 export async function requestCameraAccess() {
-    const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
-    });
-    videoEl!.srcObject = stream;
-    await videoEl!.play();
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
+        });
+        videoEl!.srcObject = stream;
+        await videoEl!.play();
+
+        // Hide overlay if it was shown
+        const overlay = document.getElementById('cameraDeniedOverlay');
+        if (overlay) overlay.classList.add('hidden');
+
+    } catch (e: any) {
+        if (e.name === 'NotAllowedError') {
+            // Hide loading overlay if it's blocking the view
+            const loading = document.getElementById('loadingOverlay');
+            if (loading) loading.classList.add('hidden');
+
+            showCameraDeniedOverlay();
+        } else {
+            showToast('Camera error: ' + e.message, true, 5000);
+        }
+    }
 }

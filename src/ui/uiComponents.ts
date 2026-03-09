@@ -1,6 +1,7 @@
 import { appState } from '../core/appState';
 import { PICKER_COLORS, COLOR_PICKER_RADIUS, SWATCH_HIT_RADIUS, FIST_HOLD_TIME, FIST_ARC_COLOR } from '../constants';
 import { clearCanvas, openExportModal, performUndo, performRedo } from '../drawing/drawingState';
+import { requestCameraAccess } from '../core/cameraManager';
 
 let colorPickerEl: HTMLElement;
 let eraserBtn: HTMLElement;
@@ -19,6 +20,7 @@ let undoBtn: HTMLElement;
 let redoBtn: HTMLElement;
 let themeToggleBtn: HTMLElement;
 let sidebarLogoImg: HTMLImageElement;
+let cameraDeniedOverlay: HTMLElement;
 
 let toastTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -40,6 +42,13 @@ export function initUIComponents() {
     redoBtn = document.getElementById('redoBtn')!;
     themeToggleBtn = document.getElementById('themeToggleBtn')!;
     sidebarLogoImg = document.getElementById('sidebarLogoImg') as HTMLImageElement;
+    cameraDeniedOverlay = document.getElementById('cameraDeniedOverlay')!;
+
+    const cameraTryAgainBtn = document.getElementById('cameraTryAgainBtn')!;
+    cameraTryAgainBtn.addEventListener('click', () => {
+        hideCameraDeniedOverlay();
+        requestCameraAccess();
+    });
 
     // Initialize Theme
     if (appState.isDarkMode) {
@@ -367,3 +376,16 @@ export function setupDraggablePIP(el: HTMLElement) {
 
     document.addEventListener('touchend', stopDrag);
 }
+
+export function showCameraDeniedOverlay() {
+    if (cameraDeniedOverlay) {
+        cameraDeniedOverlay.classList.remove('hidden');
+    }
+}
+
+export function hideCameraDeniedOverlay() {
+    if (cameraDeniedOverlay) {
+        cameraDeniedOverlay.classList.add('hidden');
+    }
+}
+
