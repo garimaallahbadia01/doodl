@@ -1,7 +1,7 @@
-// ══════════════════════════════════════════════════════
+// ======================================================
 // Tutorial Onboarding Modal
 // Compact floating card, shows once on first visit
-// ══════════════════════════════════════════════════════
+// ======================================================
 
 const STORAGE_KEY = 'doodle_tutorial_seen';
 
@@ -12,12 +12,12 @@ interface Slide {
 }
 
 const SLIDES: Slide[] = [
-    { emoji: '✋', title: 'Welcome to Doodle', desc: 'Draw in the air with just your hand. Let\'s take a quick tour!' },
-    { emoji: '☝️', title: 'Point to Draw', desc: 'Raise your index finger to start drawing on the canvas.' },
-    { emoji: '✌️', title: 'Peace to Pause', desc: 'Flash a peace sign to lift the pen instantly.' },
-    { emoji: '🖐️', title: 'Palm to Erase', desc: 'Show your palm to switch to eraser. Give a thumbs down to undo, or a thumbs up to redo.' },
-    { emoji: '🤌', title: 'Pinch for Colors', desc: 'Pinch and move to browse colors. Release to pick one.' },
-    { emoji: '✊', title: 'Fist to Clear', desc: 'Hold a fist for 1 second to clear the whole canvas.' },
+    { emoji: '[ ]', title: 'Welcome to Doodle', desc: 'Draw in the air with just your hand. Let\'s take a quick tour!' },
+    { emoji: '[^]', title: 'Point to Draw', desc: 'Raise your index finger to start drawing on the canvas.' },
+    { emoji: '[V]', title: 'Peace to Pause', desc: 'Flash a peace sign to lift the pen instantly.' },
+    { emoji: '[W]', title: 'Palm to Erase', desc: 'Show your palm to switch to eraser. Give a thumbs down to undo, or a thumbs up to redo.' },
+    { emoji: '[>]', title: 'Pinch for Colors', desc: 'Pinch and move to browse colors. Release to pick one.' },
+    { emoji: '[O]', title: 'Fist to Clear', desc: 'Hold a fist for 1 second to clear the whole canvas.' },
 ];
 
 let currentSlide = 0;

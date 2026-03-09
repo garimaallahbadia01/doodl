@@ -259,7 +259,7 @@ export function flashAction(type: string) {
     setTimeout(() => actionFlashEl.classList.remove('flash'), 150);
 }
 
-// ── Toast Notification System ──
+// -- Toast Notification System --
 export function showToast(message: string, isWarning = false, duration = 3000) {
     if (!toastEl) return;
     toastEl.textContent = message;

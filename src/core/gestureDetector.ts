@@ -185,9 +185,9 @@ export function resetVelocityTracking() {
 }
 
 
-// ══════════════════════════════════════════════════════
+// ======================================================
 // Pinch Color Palette State Machine
-// ══════════════════════════════════════════════════════
+// ======================================================
 export type PinchPaletteState = 'CLOSED' | 'DWELLING' | 'BROWSING' | 'CANCELLING';
 export let pinchPaletteState: PinchPaletteState = 'CLOSED';
 
@@ -310,9 +310,9 @@ export function resetPinchPalette() {
     paletteOpenTime = 0;
 }
 
-// ══════════════════════════════════════════════════════
+// ======================================================
 // Idle Gesture Detection
-// ══════════════════════════════════════════════════════
+// ======================================================
 // Excludes POINT (drawing) and NEUTRAL (which can occur briefly due to tracking noise).
 // Any other explicit gesture immediately ends any active stroke, bypassing the sticky grace period.
 export function isIdleGesture(pose: PoseMode): boolean {

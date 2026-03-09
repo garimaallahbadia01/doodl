@@ -50,9 +50,9 @@ If you want to run this project on your own machine:
 
 This project has been modularized logically to remain completely scalable:
 
-- `index.html` — The main Vite entry point.
-- `src/core/` — Contains the math for recognizing gestures and loading the camera wrapper.
-- `src/drawing/` — Handles all the Canvas API code (rendering lines, smoothing logic, undo stacks).
-- `src/ui/` — Manages the interface elements (buttons, the floating color wheel, status popups).
+- `index.html` -- The main Vite entry point.
+- `src/core/` -- Contains the math for recognizing gestures and loading the camera wrapper.
+- `src/drawing/` -- Handles all the Canvas API code (rendering lines, smoothing logic, undo stacks).
+- `src/ui/` -- Manages the interface elements (buttons, the floating color wheel, status popups).
 
 If you want to read deeper into exactly how the math or tracking gestures operate, check out the `docs/` folder!
