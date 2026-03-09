@@ -303,8 +303,8 @@ export function resetPinchPalette() {
 // ══════════════════════════════════════════════════════
 // Idle Gesture Detection
 // ══════════════════════════════════════════════════════
-// TWO_FINGERS (peace sign) = "pen down". Immediately ends
-// any active stroke, bypassing the sticky grace period.
+// Excludes POINT (drawing) and NEUTRAL (which can occur briefly due to tracking noise).
+// Any other explicit gesture immediately ends any active stroke, bypassing the sticky grace period.
 export function isIdleGesture(pose: PoseMode): boolean {
-    return pose === 'TWO_FINGERS';
+    return pose !== 'POINT' && pose !== 'NEUTRAL';
 }
