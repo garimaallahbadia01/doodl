@@ -948,21 +948,17 @@ body {
 /* ── Privacy Note ── */
 .privacy-note {
     position: fixed;
-    top: 12px;
+    bottom: 12px;
     right: 12px;
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 10px;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-panel);
-    border-radius: 20px;
     color: var(--icon-inactive);
     font-size: 11px;
     font-weight: 500;
     pointer-events: none;
     z-index: 5000;
-    opacity: 0.8;
+    opacity: 0.6;
 }
 
 .privacy-note svg {
