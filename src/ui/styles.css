@@ -467,7 +467,7 @@ body {
 .finger-cursor.erasing {
     width: 28px;
     height: 28px;
-    background: url('/Group%2010.svg') center/contain no-repeat;
+    background: url('/assets/icons/Group_10.svg') center/contain no-repeat;
     border-radius: 0;
     box-shadow: none;
 }
