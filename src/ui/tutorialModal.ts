@@ -25,7 +25,11 @@ let cardEl: HTMLElement | null = null;
 let backdropEl: HTMLElement | null = null;
 
 export function showTutorialIfNeeded() {
-    if (localStorage.getItem(STORAGE_KEY)) return;
+    try {
+        if (localStorage.getItem(STORAGE_KEY)) return;
+    } catch {
+        // Safe fail
+    }
     injectStyles();
     createModal();
 }
@@ -353,7 +357,11 @@ function goToSlide(index: number) {
 }
 
 function closeTutorial() {
-    localStorage.setItem(STORAGE_KEY, '1');
+    try {
+        localStorage.setItem(STORAGE_KEY, '1');
+    } catch {
+        // Safe fail
+    }
     if (backdropEl) {
         backdropEl.classList.remove('visible');
         setTimeout(() => {

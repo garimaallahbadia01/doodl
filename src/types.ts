@@ -36,9 +36,7 @@ export interface AppState {
     wasPointing: boolean;
     palmHoldStart: number;
     fistHoldStart: number;
-    undoHoldStart: number;
     lastUndoTime: number;
-    redoHoldStart: number;
     lastRedoTime: number;
     wasHoldingUndo?: boolean;
     wasHoldingRedo?: boolean;
@@ -49,6 +47,9 @@ export interface StrokeSegment {
     prevX: number; prevY: number;
     midX: number; midY: number;
     lastMidX: number; lastMidY: number;
+    color: string;
+    width: number;
+    mode: Mode;
 }
 
 export interface Stroke {

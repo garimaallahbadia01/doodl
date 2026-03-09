@@ -5,7 +5,7 @@ export let handLandmarker: HandLandmarker | null = null;
 
 export async function initHandTracking() {
     const vision = await FilesetResolver.forVisionTasks(
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
     );
 
     handLandmarker = await HandLandmarker.createFromOptions(vision, {

@@ -104,7 +104,10 @@ export function drawStroke(currX: number, currY: number) {
             prevX: handState.prevX, prevY: handState.prevY,
             midX, midY,
             lastMidX: startX,
-            lastMidY: startY
+            lastMidY: startY,
+            color: appState.currentColor,
+            width: appState.currentMode === 'ERASE' ? appState.currentStrokeWidth * ERASER_WIDTH_SCALE : appState.currentStrokeWidth,
+            mode: appState.currentMode
         });
     }
 

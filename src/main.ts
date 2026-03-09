@@ -1,14 +1,14 @@
 import { initHandTracking, detectHand, handLandmarker } from './core/handTracking';
-import { getHandPose, updateVelocity, detectPinch, isPalmStable, isPinching, palmHistory, updatePinchPalette, isIdleGesture } from './core/gestureDetector';
+import { getHandPose, updateVelocity, detectPinch, isPalmStable, isPinching, palmHistory, updatePinchPalette, isIdleGesture, isHandMovingFast } from './core/gestureDetector';
 import { drawStroke, endStroke, handState } from './drawing/drawingCanvas';
-import { initDrawingState, saveCanvasState, performUndo, performRedo } from './drawing/drawingState';
+import { initDrawingState, saveCanvasState, performUndo, performRedo, redrawAll } from './drawing/drawingState';
 import { appState } from './core/appState';
 import { initUIComponents, setMode, updateFistProgress, clearCanvasWithFlash, openColorPicker, closeColorPicker, confirmColor, updatePickerHighlight, showToast } from './ui/uiComponents';
 import { initHandVisualizer, updateCursor, getSkeletonColor, getSmoothedPosition } from './ui/handVisualizer';
 import { showTutorialIfNeeded } from './ui/tutorialModal';
 // @ts-ignore
 import { DrawingUtils, HandLandmarker } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs';
-import { PALM_HOLD_TIME, FIST_HOLD_TIME } from './constants';
+import { PALM_HOLD_TIME, FIST_HOLD_TIME, UNDO_REPEAT_INTERVAL } from './constants';
 import { setupDraggablePIP } from './ui/uiComponents';
 import { initCameraManager, requestCameraAccess, isCameraActive } from './core/cameraManager';
 
@@ -16,7 +16,6 @@ let video: HTMLVideoElement;
 let skeletonCanvas: HTMLCanvasElement;
 let drawingCanvas: HTMLCanvasElement;
 let skeletonCtx: CanvasRenderingContext2D;
-let drawingCtx: CanvasRenderingContext2D;
 let loadingOverlay: HTMLElement;
 let drawingUtils: DrawingUtils | null = null;
 
@@ -37,15 +36,14 @@ function resizeCanvases() {
     const w = panel.clientWidth;
     const h = panel.clientHeight;
     if (drawingCanvas.width !== w || drawingCanvas.height !== h) {
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = drawingCanvas.width;
-        tempCanvas.height = drawingCanvas.height;
-        const ctx = tempCanvas.getContext('2d');
-        if (ctx) ctx.drawImage(drawingCanvas, 0, 0);
-
         drawingCanvas.width = w;
         drawingCanvas.height = h;
-        drawingCtx.drawImage(tempCanvas, 0, 0);
+
+        // Re-sync the context reference in drawingState.ts
+        initDrawingState(drawingCanvas);
+
+        // Redraw all strokes cleanly as vectors to prevent bitmap distortion
+        redrawAll();
     }
 }
 
@@ -96,8 +94,16 @@ function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
     }
 
     // -- Thumbs Up/Down -> Redo / Undo --
+    // Ignore explicit gestures if hand is moving too fast (prevents false swipes)
+    if (isHandMovingFast()) {
+        pose = 'NEUTRAL'; // Treat fast movement as noise
+    }
+
     if (pose === 'THUMBS_DOWN') {
-        if (!appState.wasHoldingUndo && performance.now() - appState.lastUndoTime > 400) {
+        if (!appState.wasHoldingUndo) {
+            performUndo();
+            appState.lastUndoTime = performance.now();
+        } else if (performance.now() - appState.lastUndoTime > UNDO_REPEAT_INTERVAL) {
             performUndo();
             appState.lastUndoTime = performance.now();
         }
@@ -107,7 +113,10 @@ function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
     }
 
     if (pose === 'THUMBS_UP') {
-        if (!appState.wasHoldingRedo && performance.now() - appState.lastRedoTime > 400) {
+        if (!appState.wasHoldingRedo) {
+            performRedo();
+            appState.lastRedoTime = performance.now();
+        } else if (performance.now() - appState.lastRedoTime > UNDO_REPEAT_INTERVAL) {
             performRedo();
             appState.lastRedoTime = performance.now();
         }
@@ -316,7 +325,6 @@ async function init() {
         loadingOverlay = document.getElementById('loadingOverlay')!;
 
         skeletonCtx = skeletonCanvas.getContext('2d')!;
-        drawingCtx = drawingCanvas.getContext('2d')!;
 
         initDrawingState(drawingCanvas);
         initUIComponents();
@@ -348,7 +356,7 @@ async function init() {
     } catch (err: any) {
         console.error('Initialization failed:', err);
         showToast('Error: ' + err.message, true, 8000);
-        loadingOverlay.querySelector('span')!.textContent = 'Failed: ' + err.message;
+        document.getElementById('loadingText')!.textContent = 'Failed: ' + err.message;
     } finally {
         const elapsed = Date.now() - startTime;
         const minLoadingTime = 3000;

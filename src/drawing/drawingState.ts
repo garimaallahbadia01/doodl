@@ -39,7 +39,7 @@ export function commitStroke() {
     currentStroke = null;
 }
 
-function redrawAll() {
+export function redrawAll() {
     drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
     for (const stroke of undoStack) {
         if (stroke.type === 'clear') {
@@ -48,25 +48,30 @@ function redrawAll() {
         }
 
         drawingCtx.save();
-        drawingCtx.globalCompositeOperation = stroke.mode === 'ERASE' ? 'destination-out' : 'source-over';
-        drawingCtx.strokeStyle = stroke.mode === 'ERASE' ? '#000' : stroke.color;
-        drawingCtx.lineWidth = stroke.width;
         drawingCtx.lineCap = 'round';
         drawingCtx.lineJoin = 'round';
 
         if (stroke.dot) {
+            drawingCtx.globalCompositeOperation = stroke.mode === 'ERASE' ? 'destination-out' : 'source-over';
+            drawingCtx.fillStyle = stroke.mode === 'ERASE' ? '#000' : stroke.color;
             drawingCtx.beginPath();
             drawingCtx.arc(stroke.dot.x, stroke.dot.y, stroke.width / 2, 0, Math.PI * 2);
-            drawingCtx.fillStyle = drawingCtx.strokeStyle;
             drawingCtx.fill();
         } else if (stroke.segments.length > 0) {
-            drawingCtx.beginPath();
+            // Render stroke segment by segment to respect dynamic metadata (color/width/mode)
             for (let i = 0; i < stroke.segments.length; i++) {
                 const seg = stroke.segments[i];
-                if (i === 0) drawingCtx.moveTo(seg.lastMidX, seg.lastMidY);
+
+                // Set styles dynamically for this specific segment
+                drawingCtx.globalCompositeOperation = seg.mode === 'ERASE' ? 'destination-out' : 'source-over';
+                drawingCtx.strokeStyle = seg.mode === 'ERASE' ? '#000' : seg.color;
+                drawingCtx.lineWidth = seg.width;
+
+                drawingCtx.beginPath();
+                drawingCtx.moveTo(seg.lastMidX, seg.lastMidY);
                 drawingCtx.quadraticCurveTo(seg.prevX, seg.prevY, seg.midX, seg.midY);
+                drawingCtx.stroke();
             }
-            drawingCtx.stroke();
         }
         drawingCtx.restore();
     }
@@ -75,6 +80,9 @@ function redrawAll() {
 export function performUndo() {
     if (undoStack.length > 0) {
         redoStack.push(undoStack.pop()!);
+        if (redoStack.length > UNDO_HISTORY_LIMIT) {
+            redoStack.shift();
+        }
         redrawAll();
         flashAction('undo');
     } else {

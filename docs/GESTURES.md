@@ -23,8 +23,8 @@ Doodle maps distinct hand poses to actions via sophisticated geometric filtering
   - Caveats: Activated when distance between tips and normalized hand size drop below `PINCH_START_THRESHOLD`. Exits cleanly when past `PINCH_END_THRESHOLD`. Snaps you out of Erase mode back to Draw.
 
 - **Two Fingers (Index & Middle Extended)**
-  - Action: Opens the radial color picker at the cursor location.
-  - Caveats: Swatch highlighting evaluates closest elements to the anchor via Pythagoras (and `SWATCH_HIT_RADIUS`), scaling elements up to signify impending pinch selection.
+  - Action: "Pen Up" / Explicit pause. Stops drawing instantly.
+  - Caveats: Also acts as an explicit gesture block to prevent accidental color picker opening when making other gestures.
 
 - **Thumbs Down / Thumbs Up (Others Curled)**
   - Action: Undo (Down) and Redo (Up).
