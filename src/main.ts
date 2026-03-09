@@ -336,6 +336,25 @@ function detectLoop() {
     requestAnimationFrame(detectLoop);
 }
 
+export async function startHandTrackingSystem() {
+    if (handLandmarker) return; // Already initialized
+
+    try {
+        await initHandTracking();
+        drawingUtils = new DrawingUtils(skeletonCtx);
+        console.log('Hand tracking system started successfully.');
+
+        // Final resize check
+        resizeCanvases();
+
+        showTutorialIfNeeded();
+        requestAnimationFrame(detectLoop);
+    } catch (err) {
+        console.error('Hand tracking start failed:', err);
+        showToast('Tracking initialization failed. Please refresh.', true);
+    }
+}
+
 async function init() {
     const startTime = Date.now();
     try {
@@ -361,17 +380,15 @@ async function init() {
 
         // Init camera manager without old status elements
         initCameraManager(video, skeletonCanvas, skeletonCtx);
-        await requestCameraAccess();
+        const cameraSuccess = await requestCameraAccess();
 
         resizeCanvases();
 
-        await initHandTracking();
-
-        drawingUtils = new DrawingUtils(skeletonCtx);
-
-        console.log('Doodle modular initialized successfully.');
-        showTutorialIfNeeded();
-        requestAnimationFrame(detectLoop);
+        if (cameraSuccess) {
+            await startHandTrackingSystem();
+        } else {
+            console.warn('Camera access denied. Hand tracking pending permission.');
+        }
 
     } catch (err: any) {
         console.error('Initialization failed:', err);
@@ -390,3 +407,8 @@ async function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+window.addEventListener('camera-access-granted', () => {
+    startHandTrackingSystem();
+});
+
