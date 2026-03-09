@@ -53,10 +53,11 @@ export interface StrokeSegment {
 }
 
 export interface Stroke {
-    type?: 'clear';
+    type?: 'clear' | 'erase_strokes';
     mode: Mode;
     color: string;
     width: number;
     segments: StrokeSegment[];
     dot?: Point2D;
+    erasedStrokes?: { index: number; stroke: Stroke }[];
 }

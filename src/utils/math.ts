@@ -13,3 +13,14 @@ export function calculateWeightedAverage(buffer: Point2D[]): Point2D {
     });
     return { x: smoothX / totalWeight, y: smoothY / totalWeight };
 }
+
+function sqr(x: number) { return x * x; }
+function dist2(v: Point2D, w: Point2D) { return sqr(v.x - w.x) + sqr(v.y - w.y); }
+
+export function distToSegmentSquared(p: Point2D, v: Point2D, w: Point2D) {
+    const l2 = dist2(v, w);
+    if (l2 === 0) return dist2(p, v);
+    let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+    t = Math.max(0, Math.min(1, t));
+    return dist2(p, { x: v.x + t * (w.x - v.x), y: v.y + t * (w.y - v.y) });
+}

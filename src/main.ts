@@ -30,6 +30,7 @@ const TOAST_COOLDOWN = 5000; // Don't spam toasts
 // Grace period for tracking loss to prevent broken lines
 let trackingLossFrames = 0;
 const MAX_GRACE_FRAMES = 15; // ~250ms of "Sticky" ink
+let lastSmoothedPosition: { x: number, y: number } | null = null;
 
 function resizeCanvases() {
     const panel = document.getElementById('drawingPanel')!;
@@ -206,6 +207,7 @@ function processResults(results: any) {
     }
 
     // Hand detected: reset grace period and disruption tracker
+    const recoveredLossFrames = trackingLossFrames;
     trackingLossFrames = 0;
     trackingLostWhileDrawing = false;
 
@@ -269,7 +271,23 @@ function processResults(results: any) {
     // Picker highlight is now handled inside updateGestureState via pinch palette
 
     // DRAWING: Only draw if we are in POINT pose OR within the sticky grace period, AND palette is closed
-    if (!appState.isColorPickerOpen && (pose === 'POINT' || (appState.wasPointing && trackingLossFrames > 0))) {
+    if (!appState.isColorPickerOpen && (pose === 'POINT' || (appState.wasPointing && recoveredLossFrames > 0))) {
+        if (appState.wasPointing && recoveredLossFrames > 0 && lastSmoothedPosition) {
+            if (recoveredLossFrames <= 3) {
+                // Interpolate missing frames seamlessly
+                const steps = recoveredLossFrames;
+                for (let i = 1; i <= steps; i++) {
+                    const t = i / (steps + 1);
+                    const ix = lastSmoothedPosition.x + (smoothedPos.x - lastSmoothedPosition.x) * t;
+                    const iy = lastSmoothedPosition.y + (smoothedPos.y - lastSmoothedPosition.y) * t;
+                    updateCursor({ x: ix, y: iy }, pose, appState.fistHoldStart);
+                    drawStroke(ix, iy);
+                }
+            } else {
+                // Gap too large, break the stroke
+                endStroke();
+            }
+        }
         drawStroke(smoothedPos.x, smoothedPos.y);
     } else if (appState.isColorPickerOpen && appState.wasPointing) {
         // Force-cancel any active stroke if the palette pops up while drawing
@@ -294,6 +312,8 @@ function processResults(results: any) {
 
     updateCursor(smoothedPos, pose, appState.fistHoldStart);
     skeletonCtx.restore();
+
+    lastSmoothedPosition = smoothedPos;
 }
 
 function detectLoop() {

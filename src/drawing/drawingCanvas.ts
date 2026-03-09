@@ -1,6 +1,6 @@
 import { HandState } from '../types';
 import { MIN_MOVE_THRESHOLD, DOT_HOLD_TIME, ERASER_WIDTH_SCALE } from '../constants';
-import { drawingCtx, currentStroke, commitStroke } from './drawingState';
+import { drawingCtx, currentStroke, commitStroke, eraseStrokesAt } from './drawingState';
 import { appState } from '../core/appState';
 
 export const handState: HandState = {
@@ -49,40 +49,46 @@ export function drawStroke(currX: number, currY: number) {
     if (dist < MIN_MOVE_THRESHOLD) {
         if (!handState.dotDrawn && handState.holdStart !== null) {
             if (performance.now() - handState.holdStart > DOT_HOLD_TIME) {
-                drawingCtx.save();
                 if (appState.currentMode === 'ERASE') {
-                    drawingCtx.globalCompositeOperation = 'destination-out';
-                }
-                const width = appState.currentMode === 'ERASE'
-                    ? appState.currentStrokeWidth * ERASER_WIDTH_SCALE
-                    : appState.currentStrokeWidth;
+                    eraseStrokesAt(currX, currY, (appState.currentStrokeWidth * ERASER_WIDTH_SCALE) / 2);
+                    handState.dotDrawn = true;
+                } else {
+                    drawingCtx.save();
+                    const width = appState.currentStrokeWidth;
 
-                drawingCtx.beginPath();
-                drawingCtx.arc(currX, currY, width / 2, 0, Math.PI * 2);
-                drawingCtx.fillStyle = appState.currentMode === 'ERASE' ? '#000' : appState.currentColor;
-                drawingCtx.fill();
-                drawingCtx.restore();
-                handState.dotDrawn = true;
+                    drawingCtx.beginPath();
+                    drawingCtx.arc(currX, currY, width / 2, 0, Math.PI * 2);
+                    drawingCtx.fillStyle = appState.currentColor;
+                    drawingCtx.fill();
+                    drawingCtx.restore();
+                    handState.dotDrawn = true;
 
-                if (currentStroke) {
-                    currentStroke.dot = { x: currX, y: currY };
-                    currentStroke.width = width;
+                    if (currentStroke) {
+                        currentStroke.dot = { x: currX, y: currY };
+                        currentStroke.width = width;
+                    }
                 }
             }
         }
         return;
     }
 
-    drawingCtx.save();
     if (appState.currentMode === 'ERASE') {
-        drawingCtx.globalCompositeOperation = 'destination-out';
-        drawingCtx.strokeStyle = '#000';
-        drawingCtx.lineWidth = appState.currentStrokeWidth * ERASER_WIDTH_SCALE;
-    } else {
-        drawingCtx.globalCompositeOperation = 'source-over';
-        drawingCtx.strokeStyle = appState.currentColor;
-        drawingCtx.lineWidth = appState.currentStrokeWidth;
+        eraseStrokesAt(currX, currY, (appState.currentStrokeWidth * ERASER_WIDTH_SCALE) / 2);
+
+        handState.prevX = currX;
+        handState.prevY = currY;
+        handState.lastMidX = currX;
+        handState.lastMidY = currY;
+        handState.holdStart = performance.now();
+        handState.dotDrawn = false;
+        return;
     }
+
+    drawingCtx.save();
+    drawingCtx.globalCompositeOperation = 'source-over';
+    drawingCtx.strokeStyle = appState.currentColor;
+    drawingCtx.lineWidth = appState.currentStrokeWidth;
     drawingCtx.lineCap = 'round';
     drawingCtx.lineJoin = 'round';
 
@@ -106,7 +112,7 @@ export function drawStroke(currX: number, currY: number) {
             lastMidX: startX,
             lastMidY: startY,
             color: appState.currentColor,
-            width: appState.currentMode === 'ERASE' ? appState.currentStrokeWidth * ERASER_WIDTH_SCALE : appState.currentStrokeWidth,
+            width: appState.currentStrokeWidth,
             mode: appState.currentMode
         });
     }

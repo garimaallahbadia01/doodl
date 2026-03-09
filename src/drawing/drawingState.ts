@@ -1,5 +1,6 @@
 import { UNDO_HISTORY_LIMIT } from '../constants';
 import { flashAction, showUndoRedoStatus } from '../ui/uiComponents';
+import { distToSegmentSquared } from '../utils/math';
 import { Stroke } from '../types';
 import { appState } from '../core/appState';
 
@@ -46,6 +47,7 @@ export function redrawAll() {
             drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
             continue;
         }
+        if (stroke.type === 'erase_strokes') continue;
 
         drawingCtx.save();
         drawingCtx.lineCap = 'round';
@@ -79,10 +81,19 @@ export function redrawAll() {
 
 export function performUndo() {
     if (undoStack.length > 0) {
-        redoStack.push(undoStack.pop()!);
+        const action = undoStack.pop()!;
+        redoStack.push(action);
         if (redoStack.length > UNDO_HISTORY_LIMIT) {
             redoStack.shift();
         }
+
+        if (action.type === 'erase_strokes' && action.erasedStrokes) {
+            // Restore erased strokes in ascending order of original index
+            [...action.erasedStrokes].sort((a, b) => a.index - b.index).forEach(({ index, stroke }) => {
+                undoStack.splice(index, 0, stroke);
+            });
+        }
+
         redrawAll();
         flashAction('undo');
     } else {
@@ -92,7 +103,16 @@ export function performUndo() {
 
 export function performRedo() {
     if (redoStack.length > 0) {
-        undoStack.push(redoStack.pop()!);
+        const action = redoStack.pop()!;
+        undoStack.push(action);
+
+        if (action.type === 'erase_strokes' && action.erasedStrokes) {
+            // Re-remove strokes in descending order of original index
+            [...action.erasedStrokes].sort((a, b) => b.index - a.index).forEach(({ index }) => {
+                undoStack.splice(index, 1);
+            });
+        }
+
         redrawAll();
         flashAction('redo');
     } else {
@@ -103,6 +123,51 @@ export function performRedo() {
 export function clearCanvas() {
     undoStack.push({ type: 'clear', mode: 'DRAW', color: '', width: 0, segments: [] });
     drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+}
+
+export function eraseStrokesAt(x: number, y: number, radius: number) {
+    const r2 = radius * radius;
+    const toRemove: { index: number, stroke: Stroke }[] = [];
+    const p = { x, y };
+
+    for (let i = undoStack.length - 1; i >= 0; i--) {
+        const stroke = undoStack[i];
+        if (stroke.type === 'clear' || stroke.type === 'erase_strokes') continue;
+
+        let hit = false;
+        if (stroke.dot) {
+            const dx = stroke.dot.x - x;
+            const dy = stroke.dot.y - y;
+            hit = (dx * dx + dy * dy) <= r2;
+        } else {
+            // Add a small buffer to the stroke's visual width to make erasing easier
+            const strokeR2 = Math.pow(radius + (stroke.width / 2) + 2, 2);
+            for (const seg of stroke.segments) {
+                // Approx segment to check
+                const v = { x: seg.prevX, y: seg.prevY };
+                const w = { x: seg.midX, y: seg.midY };
+                if (distToSegmentSquared(p, v, w) <= strokeR2) {
+                    hit = true;
+                    break;
+                }
+            }
+        }
+
+        if (hit) {
+            toRemove.push({ index: i, stroke });
+            // Erase from array
+            undoStack.splice(i, 1);
+        }
+    }
+
+    if (toRemove.length > 0) {
+        undoStack.push({ type: 'erase_strokes', mode: 'DRAW', color: '', width: 0, segments: [], erasedStrokes: toRemove });
+        redoStack = [];
+        if (undoStack.length > UNDO_HISTORY_LIMIT) {
+            undoStack.shift();
+        }
+        redrawAll();
+    }
 }
 
 export function openExportModal() {
