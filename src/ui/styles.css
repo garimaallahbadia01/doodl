@@ -949,7 +949,7 @@ body {
 .privacy-note {
     position: fixed;
     bottom: 12px;
-    right: 12px;
+    right: var(--spacing-page);
     display: flex;
     align-items: center;
     gap: 6px;
