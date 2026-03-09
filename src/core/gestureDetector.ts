@@ -13,11 +13,20 @@ let poseHistory: PoseMode[] = [];
 
 export function isFingerExtended(landmarks: any[], tipIdx: number, pipIdx: number, ratio: number) {
     const wrist = landmarks[0];
-    const tip = landmarks[tipIdx];
+    const mcp = landmarks[pipIdx - 1]; // Node right before PIP is MCP
     const pip = landmarks[pipIdx];
-    const distTip = Math.hypot(tip.x - wrist.x, tip.y - wrist.y);
-    const distPip = Math.hypot(pip.x - wrist.x, pip.y - wrist.y);
-    return distTip > distPip * ratio;
+    const tip = landmarks[tipIdx];
+
+    // Check 1: Tip should be significantly further from the wrist than PIP
+    const distTipToWrist = Math.hypot(tip.x - wrist.x, tip.y - wrist.y);
+    const distPipToWrist = Math.hypot(pip.x - wrist.x, pip.y - wrist.y);
+
+    // Check 2: Tip should be further from the MCP (base of finger) than the PIP is.
+    // If a finger is curled into a fist, the tip folds inward and sits closer to the MCP.
+    const distTipToMcp = Math.hypot(tip.x - mcp.x, tip.y - mcp.y);
+    const distPipToMcp = Math.hypot(pip.x - mcp.x, pip.y - mcp.y);
+
+    return (distTipToWrist > distPipToWrist * ratio) && (distTipToMcp > distPipToMcp);
 }
 
 export function isThumbExtended(landmarks: any[]) {
