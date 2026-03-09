@@ -12,12 +12,12 @@ interface Slide {
 }
 
 const SLIDES: Slide[] = [
-    { emoji: '[ ]', title: 'Welcome to Doodle', desc: 'Draw in the air with just your hand. Let\'s take a quick tour!' },
-    { emoji: '[^]', title: 'Point to Draw', desc: 'Raise your index finger to start drawing on the canvas.' },
-    { emoji: '[V]', title: 'Peace to Pause', desc: 'Flash a peace sign to lift the pen instantly.' },
-    { emoji: '[W]', title: 'Palm to Erase', desc: 'Show your palm to switch to eraser. Give a thumbs down to undo, or a thumbs up to redo.' },
-    { emoji: '[>]', title: 'Pinch for Colors', desc: 'Pinch and move to browse colors. Release to pick one.' },
-    { emoji: '[O]', title: 'Fist to Clear', desc: 'Hold a fist for 1 second to clear the whole canvas.' },
+    { emoji: '\u{270B}', title: 'Welcome to Doodle', desc: 'Draw in the air with just your hand. Let\'s take a quick tour!' },
+    { emoji: '\u{261D}\u{FE0F}', title: 'Point to Draw', desc: 'Raise your index finger to start drawing on the canvas.' },
+    { emoji: '\u{270C}\u{FE0F}', title: 'Peace to Pause', desc: 'Flash a peace sign to lift the pen instantly.' },
+    { emoji: '\u{1F590}\u{FE0F}', title: 'Palm to Erase', desc: 'Show your palm to switch to eraser. Give a thumbs down to undo, or a thumbs up to redo.' },
+    { emoji: '\u{1F90C}', title: 'Pinch for Colors', desc: 'Pinch and move to browse colors. Release to pick one.' },
+    { emoji: '\u{270A}', title: 'Fist to Clear', desc: 'Hold a fist for 1 second to clear the whole canvas.' },
 ];
 
 let currentSlide = 0;
