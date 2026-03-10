@@ -1,6 +1,6 @@
 import { HandState } from '../types';
-import { MIN_MOVE_THRESHOLD, DOT_HOLD_TIME, ERASER_WIDTH_SCALE } from '../constants';
-import { drawingCtx, currentStroke, commitStroke, eraseStrokesAt } from './drawingState';
+import { MIN_MOVE_THRESHOLD } from '../constants';
+import { drawingCtx, currentStroke, commitStroke } from './drawingState';
 import { appState } from '../core/appState';
 
 export const handState: HandState = {
@@ -47,55 +47,20 @@ export function drawStroke(currX: number, currY: number) {
     }
 
     if (dist < MIN_MOVE_THRESHOLD) {
-        if (!handState.dotDrawn && handState.holdStart !== null) {
-            if (performance.now() - handState.holdStart > DOT_HOLD_TIME) {
-                if (appState.currentMode === 'ERASE') {
-                    eraseStrokesAt(currX, currY, (appState.currentStrokeWidth * ERASER_WIDTH_SCALE) / 2);
-                    handState.dotDrawn = true;
-                } else {
-                    drawingCtx.save();
-                    const width = appState.currentStrokeWidth;
-
-                    drawingCtx.beginPath();
-                    drawingCtx.arc(currX, currY, width / 2, 0, Math.PI * 2);
-                    drawingCtx.fillStyle = appState.currentColor;
-                    drawingCtx.fill();
-                    drawingCtx.restore();
-                    handState.dotDrawn = true;
-
-                    if (currentStroke) {
-                        currentStroke.dot = { x: currX, y: currY };
-                        currentStroke.width = width;
-                    }
-                }
-            }
-        }
-        return;
-    }
-
-    if (appState.currentMode === 'ERASE') {
-        eraseStrokesAt(currX, currY, (appState.currentStrokeWidth * ERASER_WIDTH_SCALE) / 2);
-
-        handState.prevX = currX;
-        handState.prevY = currY;
-        handState.lastMidX = currX;
-        handState.lastMidY = currY;
-        handState.holdStart = performance.now();
-        handState.dotDrawn = false;
+        // No dot logic needed for now, just keep tracking
         return;
     }
 
     drawingCtx.save();
-    drawingCtx.globalCompositeOperation = 'source-over';
-    drawingCtx.strokeStyle = appState.currentColor;
-    drawingCtx.lineWidth = appState.currentStrokeWidth;
+    drawingCtx.globalCompositeOperation = appState.currentMode === 'ERASE' ? 'destination-out' : 'source-over';
+    drawingCtx.strokeStyle = appState.currentMode === 'ERASE' ? '#000' : appState.currentColor;
+    drawingCtx.lineWidth = appState.currentMode === 'ERASE' ? appState.currentStrokeWidth * 2.5 : appState.currentStrokeWidth;
     drawingCtx.lineCap = 'round';
     drawingCtx.lineJoin = 'round';
 
     const midX = (handState.prevX + currX) / 2;
     const midY = (handState.prevY + currY) / 2;
 
-    // FIX: Use ?? instead of || so that coordinate 0 is not treated as falsy
     const startX = handState.lastMidX ?? handState.prevX;
     const startY = handState.lastMidY ?? handState.prevY;
 
@@ -112,7 +77,7 @@ export function drawStroke(currX: number, currY: number) {
             lastMidX: startX,
             lastMidY: startY,
             color: appState.currentColor,
-            width: appState.currentStrokeWidth,
+            width: appState.currentMode === 'ERASE' ? appState.currentStrokeWidth * 2.5 : appState.currentStrokeWidth,
             mode: appState.currentMode
         });
     }
