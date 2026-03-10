@@ -872,6 +872,26 @@ body {
     }
 }
 
+/* ── Privacy Note ── */
+.privacy-note {
+    position: fixed;
+    bottom: 12px;
+    right: var(--spacing-page);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--icon-inactive);
+    font-size: 11px;
+    font-weight: 500;
+    pointer-events: none;
+    z-index: 5000;
+    opacity: 0.6;
+}
+
+.privacy-note svg {
+    opacity: 0.7;
+}
+
 @media (max-width: 850px) {
     :root {
         --btn-size: 36px;
@@ -898,37 +918,65 @@ body {
         height: auto;
         flex-direction: row;
         justify-content: flex-start;
-        padding: 8px 12px;
-        gap: 8px;
-        overflow-x: auto;
+        align-items: center;
+        padding: 8px 16px;
+        padding-right: 60px;
+        /* Space for the fade hint */
+        gap: 16px;
+        overflow-x: scroll;
         overflow-y: hidden;
-        border-radius: 16px;
+        border-radius: 20px;
+        /* Scroll snapping */
+        scroll-snap-type: x mandatory;
+        /* Smooth scrolling */
+        -webkit-overflow-scrolling: touch;
+        /* Hide scrollbars */
+        -ms-overflow-style: none;
+        /* IE and Edge */
+        scrollbar-width: none;
+        /* Firefox */
     }
 
-    /* Hide scrollbars for the horizontal toolbar */
     #sidebar::-webkit-scrollbar {
         display: none;
+        /* Chrome, Safari and Opera */
     }
 
-    #sidebar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
+    /* Subtle fade effect indicator */
+    .sidebar-column {
+        position: relative;
+    }
+
+    .sidebar-column::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 60px;
+        background: linear-gradient(to right, transparent, var(--bg-surface));
+        pointer-events: none;
+        border-radius: 0 20px 20px 0;
+        z-index: 5;
     }
 
     .sidebar-group {
+        display: flex;
         flex-direction: row;
-        padding: 0 4px;
-        gap: 6px;
-    }
-
-    .sidebar-group[style*="padding: 12px 0"] {
-        padding: 0 !important;
+        padding: 0;
+        gap: 10px;
+        flex-shrink: 0;
+        scroll-snap-align: start;
+        align-items: center;
     }
 
     .sidebar-divider {
-        width: 1px;
-        height: 24px;
-        margin: auto 0;
+        width: 1.5px;
+        height: 20px;
+        background: var(--divider);
+        flex-shrink: 0;
+        margin: 0 4px;
+        border-radius: 1px;
     }
 
     .brush-slider-wrap {
@@ -944,15 +992,10 @@ body {
         height: 6px;
     }
 
-    /* Move the Theme toggle out of the way on small screens */
+    /* Hide the theme toggle or move it if needed */
     .theme-toggle-btn {
-        position: absolute;
-        top: 16px;
-        left: 16px;
-        width: var(--btn-size);
-        height: var(--btn-size);
-        z-index: 300;
-        border-radius: var(--radius-btn);
+        margin-top: 0;
+        flex-shrink: 0;
     }
 
 
@@ -970,29 +1013,20 @@ body {
     }
 
     .sidebar-logo {
-        padding: 2px;
+        flex-shrink: 0;
+    }
+
+    /* Privacy note repositioned so it's not hidden under the toolbar on mobile */
+    .privacy-note {
+        bottom: 80px;
+        /* Height of toolbar (approx 52) + gap */
+        right: 16px;
+        background: transparent;
+        padding: 0;
+        opacity: 0.5;
     }
 }
 
-/* ── Privacy Note ── */
-.privacy-note {
-    position: fixed;
-    bottom: 12px;
-    right: var(--spacing-page);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--icon-inactive);
-    font-size: 11px;
-    font-weight: 500;
-    pointer-events: none;
-    z-index: 5000;
-    opacity: 0.6;
-}
-
-.privacy-note svg {
-    opacity: 0.7;
-}
 
 /* ── Camera Denied Overlay ── */
 .denied-overlay {
