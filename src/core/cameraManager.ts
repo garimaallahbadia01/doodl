@@ -54,7 +54,7 @@ export async function stopCamera() {
     skeletonCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height);
     document.getElementById('fingerCursor')!.style.display = 'none';
     if (appState.wasPointing) { endStroke(); appState.wasPointing = false; }
-    updateGestureProgress({ x: 0, y: 0 }, 0, 1, '#000');
+    updateGestureProgress({ x: 0, y: 0 }, 0, '#000');
 }
 
 export async function requestCameraAccess() {
