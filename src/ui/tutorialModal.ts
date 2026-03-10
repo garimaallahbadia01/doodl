@@ -248,28 +248,9 @@ function injectStyles() {
             max-width: 280px;
         }
         
-        .tut-success-check {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.5);
-            width: 80px;
-            height: 80px;
-            background: #34C759;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s ease;
-            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
-            z-index: 10;
-            pointer-events: none;
-        }
-        .tut-success-check.active {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1.2);
+        #tutContent {
+            transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.2, 0, 0, 1);
+            will-change: transform, opacity;
         }
 
         .tut-done-btn {
@@ -301,9 +282,6 @@ function createOverlay() {
     panel.className = 'tut-panel';
     panel.innerHTML = `
         <button class="tut-skip-btn" id="tutSkip">skip tutorial</button>
-        <div class="tut-success-check" id="tutSuccess">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-        </div>
         <div id="tutContent">
             <span class="tut-step-id" id="tutStepLabel"></span>
             <h2 class="tut-title" id="tutTitle"></h2>
@@ -403,16 +381,32 @@ export function handleGestureUpdate(pose: string, landmarks: Point2D[]) {
 }
 
 function onStepSuccess() {
-    if (successAdvanceTimer) return; // Already advancing
+    if (successAdvanceTimer) return;
+    successAdvanceTimer = true;
 
-    const successEl = document.getElementById('tutSuccess')!;
-    successEl.classList.add('active');
+    const content = document.getElementById('tutContent')!;
 
-    successAdvanceTimer = setTimeout(() => {
-        successEl.classList.remove('active');
-        successAdvanceTimer = null;
+    // Phase 1: Slide out current content
+    content.style.opacity = '0';
+    content.style.transform = 'translateX(-20px)';
+
+    setTimeout(() => {
         goToStep(currentStepIdx + 1);
-    }, 600);
+
+        // Phase 2: Snap to right side (invisible)
+        content.style.transition = 'none';
+        content.style.transform = 'translateX(20px)';
+
+        // Force layout flush so the browser registers the position change immediately
+        void content.offsetWidth;
+
+        // Phase 3: Slide back to center (visible)
+        content.style.transition = 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.2, 0, 0, 1)';
+        content.style.opacity = '1';
+        content.style.transform = 'translateX(0)';
+
+        successAdvanceTimer = null;
+    }, 300);
 }
 
 function finishTutorial() {
