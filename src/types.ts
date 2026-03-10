@@ -43,6 +43,9 @@ export interface AppState {
     wasHoldingUndo?: boolean;
     wasHoldingRedo?: boolean;
     isDarkMode: boolean;
+    fistResetStart: number;
+    undoResetStart: number;
+    redoResetStart: number;
 }
 
 export interface StrokeSegment {

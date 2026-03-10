@@ -37,6 +37,9 @@ function resetGestureTimers() {
     appState.fistHoldStart = 0;
     appState.undoHoldStart = 0;
     appState.redoHoldStart = 0;
+    appState.fistResetStart = 0;
+    appState.undoResetStart = 0;
+    appState.redoResetStart = 0;
 }
 
 function resizeCanvases() {
@@ -55,7 +58,7 @@ function resizeCanvases() {
     }
 }
 
-function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
+function updateGestureState(pose: string, landmarks: any[]) {
 
     // -- Pinch Color Palette State Machine (processed first as modal) --
     detectPinch(landmarks, pose);
@@ -89,11 +92,12 @@ function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
         if (isPalmStable(landmarks)) {
             const palmCenter = landmarks[9]; // Middle finger MCP
             if (appState.palmHoldStart === -1) {
-                updateGestureProgress(palmCenter, 1, 1, PALM_ARC_COLOR);
+                updateGestureProgress(palmCenter, 1.0, PALM_ARC_COLOR);
             } else {
                 if (appState.palmHoldStart === 0) appState.palmHoldStart = performance.now();
-                updateGestureProgress(palmCenter, appState.palmHoldStart, PALM_HOLD_TIME, PALM_ARC_COLOR);
-                if (performance.now() - appState.palmHoldStart >= PALM_HOLD_TIME) {
+                const prog = Math.min((performance.now() - appState.palmHoldStart) / PALM_HOLD_TIME, 1);
+                updateGestureProgress(palmCenter, prog, PALM_ARC_COLOR);
+                if (prog >= 1) {
                     setMode(appState.currentMode === 'DRAW' ? 'ERASE' : 'DRAW');
                     appState.palmHoldStart = -1;
                     palmHistory.length = 0;
@@ -107,74 +111,99 @@ function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
         palmHistory.length = 0;
     }
 
-    // -- Thumbs Up/Down -> Redo / Undo --
-    // These already check for !isHandMovingFast()
+    const now = performance.now();
+    const RESET_TIME = 200;
 
     // -- Thumbs Down -> Undo with Timer --
-    if (pose === 'THUMBS_DOWN' && !isHandMovingFast()) {
+    if (appState.undoResetStart > 0) {
+        const thumbTip = landmarks[4];
+        const prog = 1 - Math.min((now - appState.undoResetStart) / RESET_TIME, 1);
+        updateGestureProgress(thumbTip, prog, UNDO_ARC_COLOR);
+        if (prog <= 0) appState.undoResetStart = 0;
+    } else if (pose === 'THUMBS_DOWN' && !isHandMovingFast()) {
         const thumbTip = landmarks[4];
         if (appState.undoHoldStart === -1) {
             // Repeat once held
-            updateGestureProgress(thumbTip, 1, 1, UNDO_ARC_COLOR);
-            if (performance.now() - appState.lastUndoTime >= UNDO_REPEAT_INTERVAL) {
+            if (appState.lastUndoTime === 0) appState.lastUndoTime = now;
+            const prog = Math.min((now - appState.lastUndoTime) / UNDO_REPEAT_INTERVAL, 1);
+            updateGestureProgress(thumbTip, prog, UNDO_ARC_COLOR);
+            if (prog >= 1) {
                 performUndo();
-                appState.lastUndoTime = performance.now();
+                appState.undoResetStart = now;
+                appState.lastUndoTime = 0; // Prepare for next repeat refill
             }
         } else {
-            if (appState.undoHoldStart === 0) appState.undoHoldStart = performance.now();
-            updateGestureProgress(thumbTip, appState.undoHoldStart, UNDO_HOLD_TIME, UNDO_ARC_COLOR);
-            if (performance.now() - appState.undoHoldStart >= UNDO_HOLD_TIME) {
+            if (appState.undoHoldStart === 0) appState.undoHoldStart = now;
+            const prog = Math.min((now - appState.undoHoldStart) / UNDO_HOLD_TIME, 1);
+            updateGestureProgress(thumbTip, prog, UNDO_ARC_COLOR);
+            if (prog >= 1) {
                 performUndo();
-                appState.lastUndoTime = performance.now();
-                appState.undoHoldStart = -1; // Switch to held/repeat state
+                appState.undoResetStart = now;
+                appState.undoHoldStart = -1; // Switch to repeat state
             }
         }
     } else {
         appState.undoHoldStart = 0;
+        appState.lastUndoTime = 0;
     }
 
     // -- Thumbs Up -> Redo with Timer --
-    if (pose === 'THUMBS_UP' && !isHandMovingFast()) {
+    if (appState.redoResetStart > 0) {
+        const thumbTip = landmarks[4];
+        const prog = 1 - Math.min((now - appState.redoResetStart) / RESET_TIME, 1);
+        updateGestureProgress(thumbTip, prog, REDO_ARC_COLOR);
+        if (prog <= 0) appState.redoResetStart = 0;
+    } else if (pose === 'THUMBS_UP' && !isHandMovingFast()) {
         const thumbTip = landmarks[4];
         if (appState.redoHoldStart === -1) {
             // Repeat once held
-            updateGestureProgress(thumbTip, 1, 1, REDO_ARC_COLOR);
-            if (performance.now() - appState.lastRedoTime >= UNDO_REPEAT_INTERVAL) {
+            if (appState.lastRedoTime === 0) appState.lastRedoTime = now;
+            const prog = Math.min((now - appState.lastRedoTime) / UNDO_REPEAT_INTERVAL, 1);
+            updateGestureProgress(thumbTip, prog, REDO_ARC_COLOR);
+            if (prog >= 1) {
                 performRedo();
-                appState.lastRedoTime = performance.now();
+                appState.redoResetStart = now;
+                appState.lastRedoTime = 0; // Prepare for next repeat refill
             }
         } else {
-            if (appState.redoHoldStart === 0) appState.redoHoldStart = performance.now();
-            updateGestureProgress(thumbTip, appState.redoHoldStart, REDO_HOLD_TIME, REDO_ARC_COLOR);
-            if (performance.now() - appState.redoHoldStart >= REDO_HOLD_TIME) {
+            if (appState.redoHoldStart === 0) appState.redoHoldStart = now;
+            const prog = Math.min((now - appState.redoHoldStart) / REDO_HOLD_TIME, 1);
+            updateGestureProgress(thumbTip, prog, REDO_ARC_COLOR);
+            if (prog >= 1) {
                 performRedo();
-                appState.lastRedoTime = performance.now();
-                appState.redoHoldStart = -1; // Switch to held/repeat state
+                appState.redoResetStart = now;
+                appState.redoHoldStart = -1; // Switch to repeat state
             }
         }
     } else {
         appState.redoHoldStart = 0;
+        appState.lastRedoTime = 0;
     }
 
     // -- Fist held -> Clear Canvas --
-    if (pose === 'FIST') {
-        if (appState.fistHoldStart === -1) {
-            updateGestureProgress(fingerPos, 1, 1, FIST_ARC_COLOR);
-        } else {
-            if (appState.fistHoldStart === 0) appState.fistHoldStart = performance.now();
-            updateGestureProgress(fingerPos, appState.fistHoldStart, FIST_HOLD_TIME, FIST_ARC_COLOR);
-            if (performance.now() - appState.fistHoldStart >= FIST_HOLD_TIME) {
-                clearCanvasWithFlash();
-                appState.fistHoldStart = -1;
-            }
+    if (appState.fistResetStart > 0) {
+        const palmCenter = landmarks[9];
+        const prog = 1 - Math.min((now - appState.fistResetStart) / RESET_TIME, 1);
+        updateGestureProgress(palmCenter, prog, FIST_ARC_COLOR);
+        if (prog <= 0) appState.fistResetStart = 0;
+    } else if (pose === 'FIST') {
+        const palmCenter = landmarks[9];
+        if (appState.fistHoldStart === 0) appState.fistHoldStart = now;
+        const prog = Math.min((now - appState.fistHoldStart) / FIST_HOLD_TIME, 1);
+        updateGestureProgress(palmCenter, prog, FIST_ARC_COLOR);
+        if (prog >= 1) {
+            clearCanvasWithFlash();
+            appState.fistResetStart = now;
+            appState.fistHoldStart = 0;
         }
     } else {
         appState.fistHoldStart = 0;
     }
 
     // Global reset if no timed gesture is active
-    if (pose !== 'FIST' && pose !== 'THUMBS_UP' && pose !== 'THUMBS_DOWN' && pose !== 'OPEN_PALM') {
-        updateGestureProgress(fingerPos, 0, 1, '#000');
+    if (pose !== 'FIST' && pose !== 'THUMBS_UP' && pose !== 'THUMBS_DOWN' && pose !== 'OPEN_PALM' &&
+        appState.fistResetStart === 0 && appState.undoResetStart === 0 && appState.redoResetStart === 0) {
+        updateGestureProgress({ x: 0, y: 0 }, 0, '#000');
     }
 
     // -- Point -> Drawing --
@@ -182,6 +211,7 @@ function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
         if (!appState.wasPointing) {
             saveCanvasState();
             handState.posBuffer = [];
+            window.dispatchEvent(new CustomEvent('stroke-started'));
         }
         appState.wasPointing = true;
         trackingLossFrames = 0;
@@ -227,7 +257,7 @@ function processResults(results: any) {
 
             document.getElementById('fingerCursor')!.style.display = 'none';
             resetGestureTimers();
-            updateGestureProgress({ x: 0, y: 0 }, 0, 1, '#000');
+            updateGestureProgress({ x: 0, y: 0 }, 0, '#000');
 
             if (trackingLostWhileDrawing) {
                 if (performance.now() - lastToastTime > TOAST_COOLDOWN) {
@@ -301,7 +331,12 @@ function processResults(results: any) {
     // -- ADAPTIVE FLOW: Always allow smoothing, but handle disruption gracefully --
     const smoothedPos = getSmoothedPosition(handState.posBuffer, indexTip.x, indexTip.y);
 
-    updateGestureState(pose, landmarks, smoothedPos);
+    updateGestureState(pose, landmarks);
+
+    // Tutorial update
+    import('./ui/tutorialModal').then(mod => {
+        mod.handleGestureUpdate(pose, landmarks);
+    });
 
     // Picker highlight is now handled inside updateGestureState via pinch palette
 

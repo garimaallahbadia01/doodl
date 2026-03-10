@@ -25,5 +25,8 @@ export const appState: AppState = {
     lastRedoTime: 0,
     undoHoldStart: 0,
     redoHoldStart: 0,
-    isDarkMode: getSafeThemePref()
+    isDarkMode: getSafeThemePref(),
+    fistResetStart: 0,
+    undoResetStart: 0,
+    redoResetStart: 0
 };

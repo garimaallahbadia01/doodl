@@ -21,6 +21,7 @@ let redoBtn: HTMLElement;
 let themeToggleBtn: HTMLElement;
 let sidebarLogoImg: HTMLImageElement;
 let cameraDeniedOverlay: HTMLElement;
+let helpBtn: HTMLElement;
 
 let toastTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -43,6 +44,7 @@ export function initUIComponents() {
     themeToggleBtn = document.getElementById('themeToggleBtn')!;
     sidebarLogoImg = document.getElementById('sidebarLogoImg') as HTMLImageElement;
     cameraDeniedOverlay = document.getElementById('cameraDeniedOverlay')!;
+    helpBtn = document.getElementById('helpBtn')!;
 
     const cameraTryAgainBtn = document.getElementById('cameraTryAgainBtn')!;
     cameraTryAgainBtn.addEventListener('click', () => {
@@ -76,6 +78,10 @@ export function initUIComponents() {
 
     clearBtn.addEventListener('click', () => {
         clearCanvasWithFlash();
+    });
+
+    helpBtn.addEventListener('click', () => {
+        import('./tutorialModal').then(mod => mod.startTutorial());
     });
 
     const exportBtn = document.getElementById('exportBtn')!;
@@ -294,13 +300,12 @@ export function showUndoRedoStatus(msg: string) {
     showToast(msg, false, 1200);
 }
 
-export function updateGestureProgress(fingerPos: { x: number, y: number }, holdStartTime: number, targetTime: number, color: string) {
+export function updateGestureProgress(fingerPos: { x: number, y: number }, progress: number, color: string) {
     if (!fistProgressEl || !fistCtx) return;
-    if (holdStartTime <= 0) {
+    if (progress <= 0) {
         fistProgressEl.classList.remove('visible');
         return;
     }
-    const progress = Math.min((performance.now() - holdStartTime) / targetTime, 1);
     fistProgressEl.classList.add('visible');
     fistProgressEl.style.transform = `translate(${fingerPos.x - 24}px, ${fingerPos.y - 24}px)`;
 
