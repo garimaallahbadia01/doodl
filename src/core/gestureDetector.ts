@@ -76,8 +76,8 @@ export function getHandPose(landmarks: any[]): PoseMode {
     else if (totalHandExtendedCount >= 4) {
         rawPose = 'OPEN_PALM';
     }
-    // FIST: All fingers curled (allow 1 stray finger for reliability)
-    else if (!ext.thumb && (fingersExtendedCount <= 1)) {
+    // FIST: All fingers curled (strict check for safety)
+    else if (!ext.thumb && !ext.index && !ext.middle && !ext.ring && !ext.pinky) {
         rawPose = 'FIST';
     }
 
