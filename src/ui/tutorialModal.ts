@@ -15,15 +15,12 @@ interface TutorialStep {
     title: string;
     instruction: string;
     hintText: string;
-    hintSvg?: string;
+    hintHtml?: string;
     checkSuccess: (pose: string, landmarks: Point2D[]) => boolean;
 }
 
 // Inline SVGs for hand diagrams
-const SVG_HAND_POINT = `<svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v8"/><path d="M12 10l-2-2"/><path d="M12 10l2-2"/><path d="M7 11v8a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9"/><path d="M15 9V7a1 1 0 0 0-1-1h-2a1 1 0 0 0-1 1v4"/></svg>`;
 const SVG_HAND_TWO = `<svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v8"/><path d="M14 2v8"/><path d="M7 11v8a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9"/><path d="M15 9V7a1 1 0 0 0-1-1h-2a1 1 0 0 0-1 1v4"/></svg>`;
-const SVG_HAND_PALM = `<svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v8"/><path d="M8 3v7"/><path d="M16 3v7"/><path d="M4 8v5"/><path d="M20 8v5"/><path d="M7 13v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V13"/></svg>`;
-const SVG_PINCH_ANIM = `<svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><path d="M10 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2z"/><path d="M8 12h-3"/><path d="M19 12h-3"/></svg>`;
 const SVG_DONE = `<svg width="120" height="120" viewBox="0 0 279 270" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M118.5 211V260.5L129 268.5L170 238L182 211L133.5 187L118.5 211Z" fill="#E6DEBE"/>
 <path d="M257.152 68.7423L206.774 42.5082C205.794 41.998 205.414 40.7903 205.924 39.8106L210.311 31.3846L214.699 22.9586C215.209 21.9789 216.417 21.5982 217.397 22.1084L267.775 48.3425C268.755 48.8526 269.136 50.0604 268.625 51.0401L259.85 67.8921C259.34 68.8718 258.132 69.2524 257.152 68.7423Z" fill="#E6DEBE"/>
@@ -56,7 +53,7 @@ const STEPS: TutorialStep[] = [
         title: 'draw something',
         instruction: 'raise your index finger and draw anything',
         hintText: 'keep your palm facing the camera with your index finger extended.',
-        hintSvg: SVG_HAND_POINT,
+        hintHtml: `<img src="/gestures/draw.svg" class="tut-hint-img">`,
         checkSuccess: (pose) => {
             return pose === 'POINT' && undoStack.length > initialUndoCount;
         }
@@ -66,7 +63,7 @@ const STEPS: TutorialStep[] = [
         title: 'lift the pen',
         instruction: 'flash a peace sign to lift the pen',
         hintText: 'extend both your index and middle fingers.',
-        hintSvg: SVG_HAND_TWO,
+        hintHtml: SVG_HAND_TWO,
         checkSuccess: (pose) => {
             return pose === 'TWO_FINGERS';
         }
@@ -76,7 +73,7 @@ const STEPS: TutorialStep[] = [
         title: 'pick a color',
         instruction: 'pinch and move your hand to browse colors, then release to pick one',
         hintText: 'pinch your thumb and index together, move sideways, then let go.',
-        hintSvg: SVG_PINCH_ANIM,
+        hintHtml: `<img src="/gestures/pinch.svg" class="tut-hint-img">`,
         checkSuccess: () => {
             return appState.currentColor !== initialColor;
         }
@@ -86,6 +83,12 @@ const STEPS: TutorialStep[] = [
         title: 'undo and redo',
         instruction: 'thumbs down to undo · thumbs up to redo',
         hintText: 'make a mark first, then try thumbs down.',
+        hintHtml: `
+            <div style="display:flex; gap:16px;">
+                <img src="/gestures/undo.svg" class="tut-hint-img small">
+                <img src="/gestures/redo.svg" class="tut-hint-img small">
+            </div>
+        `,
         checkSuccess: (pose) => {
             if (pose === 'THUMBS_UP') thumbUpSeen = true;
             if (pose === 'THUMBS_DOWN') thumbDownSeen = true;
@@ -97,7 +100,7 @@ const STEPS: TutorialStep[] = [
         title: 'erase',
         instruction: 'open your palm to switch to eraser mode',
         hintText: 'show all five fingers spread wide.',
-        hintSvg: SVG_HAND_PALM,
+        hintHtml: `<img src="/gestures/hand.svg" class="tut-hint-img">`,
         checkSuccess: (pose) => {
             return pose === 'OPEN_PALM' && appState.currentMode === 'ERASE';
         }
@@ -107,7 +110,7 @@ const STEPS: TutorialStep[] = [
         title: "you're ready!",
         instruction: "now go doodle.",
         hintText: "",
-        hintSvg: SVG_DONE,
+        hintHtml: SVG_DONE,
         checkSuccess: () => false // Handled by button
     }
 ];
@@ -229,9 +232,14 @@ function injectStyles() {
             opacity: 1;
             transform: translateY(0);
         }
-        .tut-hint-svg {
+        .tut-hint-svg, .tut-hint-img {
             color: #43403D;
             margin-bottom: 12px;
+            max-height: 100px;
+            width: auto;
+        }
+        .tut-hint-img.small {
+            max-height: 70px;
         }
         .tut-hint-text {
             font-size: 13px;
@@ -360,14 +368,14 @@ function goToStep(idx: number) {
     // Step 6 has a subline
     if (idx === STEPS.length - 1) {
         document.getElementById('tutHintText')!.textContent = step.hintText;
-        document.getElementById('tutHintSvg')!.innerHTML = step.hintSvg || '';
+        document.getElementById('tutHintSvg')!.innerHTML = step.hintHtml || '';
         hintContainer.classList.add('visible');
         document.getElementById('tutSkip')!.style.display = 'none';
     } else {
         // Start hint timer
         hintTimer = setTimeout(() => {
             document.getElementById('tutHintText')!.textContent = step.hintText;
-            document.getElementById('tutHintSvg')!.innerHTML = step.hintSvg || '';
+            document.getElementById('tutHintSvg')!.innerHTML = step.hintHtml || '';
             hintContainer.classList.add('visible');
         }, 5000);
     }
