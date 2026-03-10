@@ -85,18 +85,22 @@ function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
     if (palette.state !== 'CLOSED') return;
 
     // -- Open Palm + stable -> Toggle Draw/Erase Mode --
-    if (pose === 'OPEN_PALM' && isPalmStable(landmarks)) {
-        const palmCenter = landmarks[9]; // Middle finger MCP
-        if (appState.palmHoldStart === -1) {
-            updateGestureProgress(palmCenter, 1, 1, PALM_ARC_COLOR);
-        } else {
-            if (appState.palmHoldStart === 0) appState.palmHoldStart = performance.now();
-            updateGestureProgress(palmCenter, appState.palmHoldStart, PALM_HOLD_TIME, PALM_ARC_COLOR);
-            if (performance.now() - appState.palmHoldStart >= PALM_HOLD_TIME) {
-                setMode(appState.currentMode === 'DRAW' ? 'ERASE' : 'DRAW');
-                appState.palmHoldStart = -1;
-                palmHistory.length = 0;
+    if (pose === 'OPEN_PALM') {
+        if (isPalmStable(landmarks)) {
+            const palmCenter = landmarks[9]; // Middle finger MCP
+            if (appState.palmHoldStart === -1) {
+                updateGestureProgress(palmCenter, 1, 1, PALM_ARC_COLOR);
+            } else {
+                if (appState.palmHoldStart === 0) appState.palmHoldStart = performance.now();
+                updateGestureProgress(palmCenter, appState.palmHoldStart, PALM_HOLD_TIME, PALM_ARC_COLOR);
+                if (performance.now() - appState.palmHoldStart >= PALM_HOLD_TIME) {
+                    setMode(appState.currentMode === 'DRAW' ? 'ERASE' : 'DRAW');
+                    appState.palmHoldStart = -1;
+                    palmHistory.length = 0;
+                }
             }
+        } else {
+            appState.palmHoldStart = 0;
         }
     } else {
         appState.palmHoldStart = 0;
