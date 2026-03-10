@@ -39,30 +39,47 @@ export function isThumbExtended(landmarks: any[]) {
 }
 
 export function getHandPose(landmarks: any[]): PoseMode {
-    // -- POINT Hysteresis: Easier to stay pointing than to start pointing --
     const pointRatio = (previousPose === 'POINT') ? INDEX_EXTENSION_RATIO * 0.9 : INDEX_EXTENSION_RATIO;
+    // Use a slightly more lenient ratio for checking "other" fingers during complex poses
+    const lowRatio = OTHERS_EXTENSION_RATIO * 0.85;
 
     const ext = {
         thumb: isThumbExtended(landmarks),
         index: isFingerExtended(landmarks, 8, 6, pointRatio),
-        middle: isFingerExtended(landmarks, 12, 10, OTHERS_EXTENSION_RATIO),
-        ring: isFingerExtended(landmarks, 16, 14, OTHERS_EXTENSION_RATIO),
-        pinky: isFingerExtended(landmarks, 20, 18, OTHERS_EXTENSION_RATIO)
+        middle: isFingerExtended(landmarks, 12, 10, lowRatio),
+        ring: isFingerExtended(landmarks, 16, 14, lowRatio),
+        pinky: isFingerExtended(landmarks, 20, 18, lowRatio)
     };
-    const allCurled = !ext.index && !ext.middle && !ext.ring && !ext.pinky;
+
+    // Derived counts for leniency
+    const fingersExtendedCount = (ext.index ? 1 : 0) + (ext.middle ? 1 : 0) + (ext.ring ? 1 : 0) + (ext.pinky ? 1 : 0);
+    const totalHandExtendedCount = fingersExtendedCount + (ext.thumb ? 1 : 0);
 
     let rawPose: PoseMode = 'NEUTRAL';
 
-    if (ext.index && !ext.middle && !ext.ring && !ext.pinky) rawPose = 'POINT';
-    else if (ext.index && ext.middle && !ext.ring && !ext.pinky) rawPose = 'TWO_FINGERS';
-    else if (ext.thumb && allCurled) {
+    // POINT: Just index extended, nothing else (or maybe thumb)
+    if (ext.index && (fingersExtendedCount === 1)) {
+        rawPose = 'POINT';
+    }
+    // TWO_FINGERS: Index + Middle
+    else if (ext.index && ext.middle && (fingersExtendedCount === 2)) {
+        rawPose = 'TWO_FINGERS';
+    }
+    // THUMBS: Only thumb extended, at least 3 fingers curled
+    else if (ext.thumb && (fingersExtendedCount <= 1)) {
         const thumbTip = landmarks[4];
         const wrist = landmarks[0];
         if (thumbTip.y < wrist.y - 0.05) rawPose = 'THUMBS_UP';
         else if (thumbTip.y > wrist.y + 0.05) rawPose = 'THUMBS_DOWN';
     }
-    else if (ext.thumb && ext.index && ext.middle && ext.ring && ext.pinky) rawPose = 'OPEN_PALM';
-    else if (!ext.thumb && allCurled) rawPose = 'FIST';
+    // OPEN_PALM: At least 4 fingers/thumb extended total
+    else if (totalHandExtendedCount >= 4) {
+        rawPose = 'OPEN_PALM';
+    }
+    // FIST: All fingers curled (allow 1 stray finger for reliability)
+    else if (!ext.thumb && (fingersExtendedCount <= 1)) {
+        rawPose = 'FIST';
+    }
 
     // Anti-flicker: 3-frame rolling window
     poseHistory.push(rawPose);
@@ -144,7 +161,7 @@ export function detectPinch(landmarks: any[], pose: string) {
     const normalizedPinch = pinchDist / handSize;
 
     // Prevent pinch detection if the hand is in an explicit conflicting gesture
-    const isConflictingGesture = pose === 'FIST' || pose === 'THUMBS_UP' || pose === 'THUMBS_DOWN' || pose === 'TWO_FINGERS';
+    const isConflictingGesture = pose === 'FIST' || pose === 'THUMBS_UP' || pose === 'THUMBS_DOWN' || pose === 'TWO_FINGERS' || pose === 'OPEN_PALM';
 
     if (isConflictingGesture) {
         // If holding a fist, force cancel any ongoing pinch
