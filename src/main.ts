@@ -1,5 +1,5 @@
 import { initHandTracking, detectHand, handLandmarker } from './core/handTracking';
-import { getHandPose, updateVelocity, detectPinch, isPinching, palmHistory, updatePinchPalette, isIdleGesture, isHandMovingFast } from './core/gestureDetector';
+import { getHandPose, updateVelocity, detectPinch, isPalmStable, isPinching, palmHistory, updatePinchPalette, isIdleGesture, isHandMovingFast } from './core/gestureDetector';
 import { drawStroke, endStroke, handState } from './drawing/drawingCanvas';
 import { initDrawingState, saveCanvasState, performUndo, performRedo, redrawAll } from './drawing/drawingState';
 import { appState } from './core/appState';
@@ -85,7 +85,7 @@ function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
     if (palette.state !== 'CLOSED') return;
 
     // -- Open Palm + stable -> Toggle Draw/Erase Mode --
-    if (pose === 'OPEN_PALM' && !isHandMovingFast()) {
+    if (pose === 'OPEN_PALM' && isPalmStable(landmarks)) {
         const palmCenter = landmarks[9]; // Middle finger MCP
         if (appState.palmHoldStart === -1) {
             updateGestureProgress(palmCenter, 1, 1, PALM_ARC_COLOR);
