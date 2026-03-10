@@ -89,7 +89,22 @@ export function getHandPose(landmarks: any[]): PoseMode {
     }
     // FIST: All fingers curled (strict check for safety)
     else if (!ext.thumb && !ext.index && !ext.middle && !ext.ring && !ext.pinky) {
-        rawPose = 'FIST';
+        const thumbTip = landmarks[4];
+        const indexTip = landmarks[8];
+        const wrist = landmarks[0];
+        const middleMCP = landmarks[9];
+        const handSize = Math.hypot(middleMCP.x - wrist.x, middleMCP.y - wrist.y);
+        const pinchDist = Math.hypot(indexTip.x - thumbTip.x, indexTip.y - thumbTip.y);
+        const normalizedPinch = pinchDist / handSize;
+
+        // A real fist usually doesn't have the index and thumb tips touching in an 'O' shape.
+        // If they are touching (low pinch distance), it's likely a pinch starting or active.
+        // We only allow FIST if the index and thumb are significantly apart.
+        if (normalizedPinch > PINCH_START_THRESHOLD * 1.5) {
+            rawPose = 'FIST';
+        } else {
+            rawPose = 'NEUTRAL';
+        }
     }
 
     // Anti-flicker: 3-frame rolling window
@@ -171,11 +186,12 @@ export function detectPinch(landmarks: any[], pose: string) {
     const pinchDist = Math.hypot(indexTip.x - thumbTip.x, indexTip.y - thumbTip.y);
     const normalizedPinch = pinchDist / handSize;
 
-    // Prevent pinch detection if the hand is in an explicit conflicting gesture
-    const isConflictingGesture = pose === 'FIST' || pose === 'THUMBS_UP' || pose === 'THUMBS_DOWN' || pose === 'TWO_FINGERS' || pose === 'OPEN_PALM';
+    // Prevent pinch detection if the hand is in an explicit conflicting gesture.
+    // Note: We EXCLUDE 'FIST' here because a pinch can often be misidentified as a fist.
+    // We want the pinch logic (which is distance-based) to take precedence.
+    const isConflictingGesture = pose === 'THUMBS_UP' || pose === 'THUMBS_DOWN' || pose === 'TWO_FINGERS' || pose === 'OPEN_PALM';
 
     if (isConflictingGesture) {
-        // If holding a fist, force cancel any ongoing pinch
         isPinching = false;
         pinchReleaseStartTime = 0;
         return;

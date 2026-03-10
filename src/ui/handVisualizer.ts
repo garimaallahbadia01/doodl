@@ -2,6 +2,7 @@ import { appState } from '../core/appState';
 import { CURSOR_SMOOTHING_BUFFER_SIZE, CURSOR_DEAD_ZONE, FIST_ARC_COLOR, FIST_HOLD_TIME, SMOOTHING_BUFFER_SIZE } from '../constants';
 import { Point2D } from '../types';
 import { calculateWeightedAverage } from '../utils/math';
+import { isPinching } from '../core/gestureDetector';
 
 let cursorBuffer: Point2D[] = [];
 export let displayedCursorX = 0;
@@ -48,7 +49,7 @@ export function updateCursor(fingerPos: Point2D, pose: string, fistHoldStart: nu
         fingerCursor.classList.add('erasing');
     } else if (appState.isColorPickerOpen) {
         fingerCursor.classList.add('picking');
-    } else if (pose === 'FIST') {
+    } else if (pose === 'FIST' && !isPinching) {
         fingerCursor.classList.add('fist-hold');
         if (fistHoldStart > 0) {
             const progress = Math.min((performance.now() - fistHoldStart) / FIST_HOLD_TIME, 1);
@@ -61,6 +62,6 @@ export function updateCursor(fingerPos: Point2D, pose: string, fistHoldStart: nu
 
 export function getSkeletonColor(pose: string): string {
     if (appState.currentMode === 'ERASE') return '#FF8C00';
-    if (pose === 'FIST') return FIST_ARC_COLOR;
+    if (pose === 'FIST' && !isPinching) return FIST_ARC_COLOR;
     return '#1e3a5f';
 }

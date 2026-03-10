@@ -186,7 +186,7 @@ function updateGestureState(pose: string, landmarks: any[]) {
         const prog = 1 - Math.min((now - appState.fistResetStart) / RESET_TIME, 1);
         updateGestureProgress(palmCenter, prog, FIST_ARC_COLOR);
         if (prog <= 0) appState.fistResetStart = 0;
-    } else if (pose === 'FIST') {
+    } else if (pose === 'FIST' && !isPinching) {
         const palmCenter = landmarks[9];
         if (appState.fistHoldStart === 0) appState.fistHoldStart = now;
         const prog = Math.min((now - appState.fistHoldStart) / FIST_HOLD_TIME, 1);

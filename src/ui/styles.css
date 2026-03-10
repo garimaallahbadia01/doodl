@@ -138,8 +138,14 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
+    gap: 4px;
+    /* Increased from 2px for better clarity across all groups */
     padding: 10px 0;
+}
+
+/* Specific spacing for color swatches to ensure they never touch */
+.swatch-group {
+    gap: 6px;
 }
 
 /* Sidebar Divider */
