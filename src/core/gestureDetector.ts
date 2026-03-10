@@ -68,9 +68,20 @@ export function getHandPose(landmarks: any[]): PoseMode {
     // THUMBS: Only thumb extended, at least 3 fingers curled
     else if (ext.thumb && (fingersExtendedCount <= 1)) {
         const thumbTip = landmarks[4];
+        const indexTip = landmarks[8];
         const wrist = landmarks[0];
-        if (thumbTip.y < wrist.y - 0.05) rawPose = 'THUMBS_UP';
-        else if (thumbTip.y > wrist.y + 0.05) rawPose = 'THUMBS_DOWN';
+        const middleMCP = landmarks[9];
+
+        // Hand size for normalization
+        const handSize = Math.hypot(middleMCP.x - wrist.x, middleMCP.y - wrist.y);
+        const pinchDist = Math.hypot(indexTip.x - thumbTip.x, indexTip.y - thumbTip.y);
+
+        // A Thumbs gesture requires the thumb to be clear of the index finger (un-pinched)
+        // normalizedPinch of > 0.4 ensures thumb is extended away, not reaching for index
+        if (handSize > 0 && (pinchDist / handSize) > 0.4) {
+            if (thumbTip.y < wrist.y - 0.05) rawPose = 'THUMBS_UP';
+            else if (thumbTip.y > wrist.y + 0.05) rawPose = 'THUMBS_DOWN';
+        }
     }
     // OPEN_PALM: At least 4 fingers/thumb extended total
     else if (totalHandExtendedCount >= 4) {
