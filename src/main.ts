@@ -8,7 +8,7 @@ import { initHandVisualizer, updateCursor, getSkeletonColor, getSmoothedPosition
 import { showTutorialIfNeeded } from './ui/tutorialModal';
 // @ts-ignore
 import { DrawingUtils, HandLandmarker } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs';
-import { PALM_HOLD_TIME, PALM_ARC_COLOR, FIST_HOLD_TIME, FIST_ARC_COLOR, UNDO_HOLD_TIME, UNDO_ARC_COLOR, REDO_HOLD_TIME, REDO_ARC_COLOR } from './constants';
+import { PALM_HOLD_TIME, PALM_ARC_COLOR, FIST_HOLD_TIME, FIST_ARC_COLOR, UNDO_HOLD_TIME, UNDO_ARC_COLOR, REDO_HOLD_TIME, REDO_ARC_COLOR, UNDO_REPEAT_INTERVAL } from './constants';
 import { setupDraggablePIP } from './ui/uiComponents';
 import { initCameraManager, requestCameraAccess, isCameraActive } from './core/cameraManager';
 
@@ -110,13 +110,19 @@ function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
     if (pose === 'THUMBS_DOWN' && !isHandMovingFast()) {
         const thumbTip = landmarks[4];
         if (appState.undoHoldStart === -1) {
+            // Repeat once held
             updateGestureProgress(thumbTip, 1, 1, UNDO_ARC_COLOR);
+            if (performance.now() - appState.lastUndoTime >= UNDO_REPEAT_INTERVAL) {
+                performUndo();
+                appState.lastUndoTime = performance.now();
+            }
         } else {
             if (appState.undoHoldStart === 0) appState.undoHoldStart = performance.now();
             updateGestureProgress(thumbTip, appState.undoHoldStart, UNDO_HOLD_TIME, UNDO_ARC_COLOR);
             if (performance.now() - appState.undoHoldStart >= UNDO_HOLD_TIME) {
                 performUndo();
-                appState.undoHoldStart = -1;
+                appState.lastUndoTime = performance.now();
+                appState.undoHoldStart = -1; // Switch to held/repeat state
             }
         }
     } else {
@@ -127,13 +133,19 @@ function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
     if (pose === 'THUMBS_UP' && !isHandMovingFast()) {
         const thumbTip = landmarks[4];
         if (appState.redoHoldStart === -1) {
+            // Repeat once held
             updateGestureProgress(thumbTip, 1, 1, REDO_ARC_COLOR);
+            if (performance.now() - appState.lastRedoTime >= UNDO_REPEAT_INTERVAL) {
+                performRedo();
+                appState.lastRedoTime = performance.now();
+            }
         } else {
             if (appState.redoHoldStart === 0) appState.redoHoldStart = performance.now();
             updateGestureProgress(thumbTip, appState.redoHoldStart, REDO_HOLD_TIME, REDO_ARC_COLOR);
             if (performance.now() - appState.redoHoldStart >= REDO_HOLD_TIME) {
                 performRedo();
-                appState.redoHoldStart = -1;
+                appState.lastRedoTime = performance.now();
+                appState.redoHoldStart = -1; // Switch to held/repeat state
             }
         }
     } else {
