@@ -65,7 +65,7 @@ body {
     height: 100%;
     overflow: hidden;
     background: var(--bg-app);
-    font-family: system-ui, -apple-system, 'SF Pro Display', 'Inter', sans-serif;
+    font-family: 'Instrument Sans', sans-serif;
     font-weight: 400;
     color: var(--text-primary);
     transition: background-color 0.3s ease, color 0.3s ease;
@@ -726,7 +726,7 @@ body {
 
 /* Heading: uses app's system font stack */
 .export-modal-title {
-    font-family: system-ui, -apple-system, 'SF Pro Display', 'Inter', sans-serif;
+    font-family: 'Instrument Sans', sans-serif;
     font-size: 24px;
     font-weight: 600;
     color: #43403D;
@@ -736,7 +736,7 @@ body {
 
 /* Subtitle */
 .export-modal-subtitle {
-    font-family: system-ui, -apple-system, 'SF Pro Display', 'Inter', sans-serif;
+    font-family: 'Instrument Sans', sans-serif;
     font-size: 14px;
     font-weight: 400;
     color: var(--icon-inactive);
@@ -776,7 +776,7 @@ body {
     flex: 1;
     border: none;
     background: transparent;
-    font-family: system-ui, -apple-system, 'SF Pro Display', 'Inter', sans-serif;
+    font-family: 'Instrument Sans', sans-serif;
     font-size: 13px;
     font-weight: 400;
     color: #43403D;
@@ -817,7 +817,7 @@ body {
     flex: 1;
     padding: 14px 0;
     border-radius: 48px;
-    font-family: system-ui, -apple-system, 'SF Pro Display', 'Inter', sans-serif;
+    font-family: 'Instrument Sans', sans-serif;
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
@@ -1083,6 +1083,7 @@ body {
 }
 
 .denied-title {
+    font-family: 'Instrument Sans', sans-serif;
     font-size: 24px;
     font-weight: 600;
     color: var(--text-primary);
@@ -1090,12 +1091,14 @@ body {
 }
 
 .denied-body {
+    font-family: 'Instrument Sans', sans-serif;
     font-size: 15px;
     line-height: 1.6;
     color: var(--icon-inactive);
 }
 
 .denied-btn {
+    font-family: 'Instrument Sans', sans-serif;
     margin-top: 10px;
     padding: 12px 32px;
     background: var(--icon-active-bg);
