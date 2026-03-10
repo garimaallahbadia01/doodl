@@ -27,6 +27,7 @@ export const PALM_STABILITY_THRESHOLD = 25;
 export const PALM_HOLD_TIME = 500;
 export const FIST_HOLD_TIME = 1000;
 export const FIST_ARC_COLOR = '#FF3333';
+export const PALM_ARC_COLOR = '#34C759';
 export const UNDO_HOLD_TIME = 800;
 export const UNDO_ARC_COLOR = '#999999';
 export const REDO_HOLD_TIME = 800;

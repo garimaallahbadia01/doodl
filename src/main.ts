@@ -1,5 +1,5 @@
 import { initHandTracking, detectHand, handLandmarker } from './core/handTracking';
-import { getHandPose, updateVelocity, detectPinch, isPalmStable, isPinching, palmHistory, updatePinchPalette, isIdleGesture, isHandMovingFast } from './core/gestureDetector';
+import { getHandPose, updateVelocity, detectPinch, isPinching, palmHistory, updatePinchPalette, isIdleGesture, isHandMovingFast } from './core/gestureDetector';
 import { drawStroke, endStroke, handState } from './drawing/drawingCanvas';
 import { initDrawingState, saveCanvasState, performUndo, performRedo, redrawAll } from './drawing/drawingState';
 import { appState } from './core/appState';
@@ -8,7 +8,7 @@ import { initHandVisualizer, updateCursor, getSkeletonColor, getSmoothedPosition
 import { showTutorialIfNeeded } from './ui/tutorialModal';
 // @ts-ignore
 import { DrawingUtils, HandLandmarker } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs';
-import { PALM_HOLD_TIME, FIST_HOLD_TIME, FIST_ARC_COLOR, UNDO_HOLD_TIME, UNDO_ARC_COLOR, REDO_HOLD_TIME, REDO_ARC_COLOR } from './constants';
+import { PALM_HOLD_TIME, PALM_ARC_COLOR, FIST_HOLD_TIME, FIST_ARC_COLOR, UNDO_HOLD_TIME, UNDO_ARC_COLOR, REDO_HOLD_TIME, REDO_ARC_COLOR } from './constants';
 import { setupDraggablePIP } from './ui/uiComponents';
 import { initCameraManager, requestCameraAccess, isCameraActive } from './core/cameraManager';
 
@@ -31,6 +31,13 @@ const TOAST_COOLDOWN = 5000; // Don't spam toasts
 let trackingLossFrames = 0;
 const MAX_GRACE_FRAMES = 15; // ~250ms of "Sticky" ink
 let lastSmoothedPosition: { x: number, y: number } | null = null;
+
+function resetGestureTimers() {
+    appState.palmHoldStart = 0;
+    appState.fistHoldStart = 0;
+    appState.undoHoldStart = 0;
+    appState.redoHoldStart = 0;
+}
 
 function resizeCanvases() {
     const panel = document.getElementById('drawingPanel')!;
@@ -78,33 +85,32 @@ function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
     if (palette.state !== 'CLOSED') return;
 
     // -- Open Palm + stable -> Toggle Draw/Erase Mode --
-    if (pose === 'OPEN_PALM' && isPalmStable(landmarks)) {
+    if (pose === 'OPEN_PALM' && !isHandMovingFast()) {
+        const palmCenter = landmarks[9]; // Middle finger MCP
         if (appState.palmHoldStart === -1) {
-            // Already triggered, wait until they break the pose
+            updateGestureProgress(palmCenter, 1, 1, PALM_ARC_COLOR);
         } else {
             if (appState.palmHoldStart === 0) appState.palmHoldStart = performance.now();
+            updateGestureProgress(palmCenter, appState.palmHoldStart, PALM_HOLD_TIME, PALM_ARC_COLOR);
             if (performance.now() - appState.palmHoldStart >= PALM_HOLD_TIME) {
                 setMode(appState.currentMode === 'DRAW' ? 'ERASE' : 'DRAW');
                 appState.palmHoldStart = -1;
                 palmHistory.length = 0;
             }
         }
-    } else if (pose !== 'OPEN_PALM') {
+    } else {
         appState.palmHoldStart = 0;
         palmHistory.length = 0;
     }
 
     // -- Thumbs Up/Down -> Redo / Undo --
-    // Ignore explicit gestures if hand is moving too fast (prevents false swipes)
-    if (isHandMovingFast()) {
-        pose = 'NEUTRAL'; // Treat fast movement as noise
-    }
+    // These already check for !isHandMovingFast()
 
     // -- Thumbs Down -> Undo with Timer --
     if (pose === 'THUMBS_DOWN' && !isHandMovingFast()) {
         const thumbTip = landmarks[4];
         if (appState.undoHoldStart === -1) {
-            updateGestureProgress(thumbTip, 1, 1, UNDO_ARC_COLOR); // Stay full until break
+            updateGestureProgress(thumbTip, 1, 1, UNDO_ARC_COLOR);
         } else {
             if (appState.undoHoldStart === 0) appState.undoHoldStart = performance.now();
             updateGestureProgress(thumbTip, appState.undoHoldStart, UNDO_HOLD_TIME, UNDO_ARC_COLOR);
@@ -121,7 +127,7 @@ function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
     if (pose === 'THUMBS_UP' && !isHandMovingFast()) {
         const thumbTip = landmarks[4];
         if (appState.redoHoldStart === -1) {
-            updateGestureProgress(thumbTip, 1, 1, REDO_ARC_COLOR); // Stay full until break
+            updateGestureProgress(thumbTip, 1, 1, REDO_ARC_COLOR);
         } else {
             if (appState.redoHoldStart === 0) appState.redoHoldStart = performance.now();
             updateGestureProgress(thumbTip, appState.redoHoldStart, REDO_HOLD_TIME, REDO_ARC_COLOR);
@@ -151,7 +157,7 @@ function updateGestureState(pose: string, landmarks: any[], fingerPos: any) {
     }
 
     // Global reset if no timed gesture is active
-    if (pose !== 'FIST' && pose !== 'THUMBS_UP' && pose !== 'THUMBS_DOWN') {
+    if (pose !== 'FIST' && pose !== 'THUMBS_UP' && pose !== 'THUMBS_DOWN' && pose !== 'OPEN_PALM') {
         updateGestureProgress(fingerPos, 0, 1, '#000');
     }
 
@@ -204,6 +210,7 @@ function processResults(results: any) {
             }
 
             document.getElementById('fingerCursor')!.style.display = 'none';
+            resetGestureTimers();
             updateGestureProgress({ x: 0, y: 0 }, 0, 1, '#000');
 
             if (trackingLostWhileDrawing) {
